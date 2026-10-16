@@ -80,7 +80,7 @@
             android:background="@drawable/btn_secondary"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
-            android:text="Tutup"
+            android:text="Close"
             android:textAllCaps="false"
             android:textColor="@color/text_primary"
             android:textSize="12sp" />
@@ -93,7 +93,7 @@
             android:background="@drawable/btn_primary"
             android:paddingLeft="18dp"
             android:paddingRight="18dp"
-            android:text="Simpan Perubahan"
+            android:text="Save Changes"
             android:textAllCaps="false"
             android:textColor="#0B132B"
             android:textSize="12sp"

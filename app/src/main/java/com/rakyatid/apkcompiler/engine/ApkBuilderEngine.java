@@ -48,7 +48,23 @@ public class ApkBuilderEngine {
                 listener.onProgress(1, 6, "[1/6] Menyiapkan direktori build...");
                 listener.onLog("=== MEMULAI KOMPILASI PROYEK: " + project.getName() + " ===");
                 listener.onLog("[INFO] Package: " + project.getPackageName());
-                listener.onLog("[INFO] Min SDK: " + project.getMinSdk() + ", Target SDK: " + project.getTargetSdk());
+
+                // Auto-bump targetSdk < 24 for Android 14+ install compatibility
+                if (project.getTargetSdk() < 24) {
+                    int origTargetSdk = project.getTargetSdk();
+                    int adjustedTargetSdk = 24;
+                    project.setTargetSdk(adjustedTargetSdk);
+                    listener.onLog(String.format(Locale.US, "[SDK] Note: Project targetSdk is %d (< 23). Adjusted to %d for modern Android 14+ install compatibility.", origTargetSdk, adjustedTargetSdk));
+                }
+
+                if (project.getMinSdk() < 21) {
+                    int origMinSdk = project.getMinSdk();
+                    int adjustedMinSdk = 21;
+                    project.setMinSdk(adjustedMinSdk);
+                    listener.onLog("[SDK] Note: Project minSdk is " + origMinSdk + " (< 21). Adjusted to " + adjustedMinSdk + " for modern Android ART compatibility.");
+                }
+
+                listener.onLog("[INFO] Min SDK: " + project.getMinSdk() + ", Target SDK: " + project.getTargetSdk() + ", Compile SDK: " + project.getCompileSdk());
 
                 // Audit Keamanan Proyek & Sandboxing
                 listener.onLog("[SECURITY] Menjalankan audit keamanan proyek...");
@@ -81,7 +97,10 @@ public class ApkBuilderEngine {
                 distDir.mkdirs();
 
                 File toolchainDir = toolchain.getToolchainDir();
-                File androidJar = toolchain.getFile("android_jar");
+                File androidJar = toolchain.getAndroidJarForProject(project);
+                if (androidJar == null || !androidJar.exists()) {
+                    androidJar = toolchain.getFile("android_jar");
+                }
                 if (androidJar == null || !androidJar.exists()) {
                     File localJar = new File(toolchainDir, "android.jar");
                     if (localJar.exists()) {
@@ -93,6 +112,9 @@ public class ApkBuilderEngine {
                     if (sdkJar.exists()) {
                         androidJar = sdkJar;
                     }
+                }
+                if (androidJar != null && androidJar.exists()) {
+                    listener.onLog("[SDK] Menggunakan Platform SDK: " + androidJar.getName() + " (" + androidJar.getAbsolutePath() + ")");
                 }
 
                 File aapt2Binary = toolchain.getFile("aapt2");
@@ -475,6 +497,15 @@ public class ApkBuilderEngine {
             String pkg = project.getPackageName() != null && SecurityAuditor.isValidPackageName(project.getPackageName())
                     ? project.getPackageName() : "com.example.app";
             content = content.replaceFirst("<manifest\\b", "<manifest package=\"" + pkg + "\" ");
+        }
+
+        // Pastikan uses-sdk sesuai dengan project minSdk dan targetSdk (agar AAPT2 tidak mempertahankan SDK lama)
+        if (content.contains("<uses-sdk")) {
+            content = content.replaceAll("android:minSdkVersion=\"\\d+\"", "android:minSdkVersion=\"" + project.getMinSdk() + "\"");
+            content = content.replaceAll("android:targetSdkVersion=\"\\d+\"", "android:targetSdkVersion=\"" + project.getTargetSdk() + "\"");
+        } else {
+            String usesSdkTag = "\n    <uses-sdk android:minSdkVersion=\"" + project.getMinSdk() + "\" android:targetSdkVersion=\"" + project.getTargetSdk() + "\" />";
+            content = content.replaceFirst("(<manifest[^>]*>)", "$1" + usesSdkTag);
         }
 
         File linkManifest = new File(buildDir, "AndroidManifest_link.xml");

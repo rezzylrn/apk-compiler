@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">APK Compiler</string>
-    <string name="title_projects">Proyek</string>
-    <string name="title_build">Kompilasi</string>
+    <string name="title_projects">Projects</string>
+    <string name="title_build">Compile</string>
     <string name="title_toolchain">Toolchain</string>
     <string name="title_files">File Explorer</string>
 
     <string name="btn_clone_repo">Clone GitHub Repo</string>
-    <string name="btn_select_folder">Pilih Folder</string>
-    <string name="btn_compile">Kompilasi Menjadi APK</string>
+    <string name="btn_select_folder">Select Folder</string>
+    <string name="btn_compile">Compile to APK</string>
     <string name="btn_install_apk">Install APK</string>
-    <string name="btn_share_apk">Bagikan APK</string>
-    <string name="btn_install_tools">Pasang Dependensi Toolchain</string>
+    <string name="btn_share_apk">Share APK</string>
+    <string name="btn_install_tools">Install Toolchain Dependencies</string>
 
-    <string name="status_ready">Siap</string>
-    <string name="status_missing">Belum Terpasang</string>
-    <string name="status_compiling">Sedang mengompilasi...</string>
-    <string name="status_success">Kompilasi Berhasil</string>
-    <string name="status_failed">Kompilasi Gagal</string>
-    <string name="status_idle">Menunggu instruksi</string>
+    <string name="status_ready">Ready</string>
+    <string name="status_missing">Not Installed</string>
+    <string name="status_compiling">Compiling...</string>
+    <string name="status_success">Compilation Succeeded</string>
+    <string name="status_failed">Compilation Failed</string>
+    <string name="status_idle">Awaiting instructions</string>
 
-    <string name="label_active_project">Proyek Aktif</string>
-    <string name="label_no_project">Belum ada proyek yang dipilih</string>
-    <string name="label_console">Log Terminal</string>
-    <string name="label_output">Hasil Build</string>
+    <string name="label_active_project">Active Project</string>
+    <string name="label_no_project">No project selected</string>
+    <string name="label_console">Terminal Logs</string>
+    <string name="label_output">Build Output</string>
 </resources>

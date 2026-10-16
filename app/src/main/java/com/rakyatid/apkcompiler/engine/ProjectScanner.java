@@ -72,10 +72,48 @@ public class ProjectScanner {
             }
         } catch (Exception ignored) {}
 
+        int compileSdk = Math.max(targetSdk, 34);
+
+        // Cek juga konfigurasi SDK di Gradle
+        File[] gradleCandidates = new File[]{
+                new File(dir, "app/build.gradle"),
+                new File(dir, "app/build.gradle.kts"),
+                new File(dir, "build.gradle"),
+                new File(dir, "build.gradle.kts")
+        };
+        for (File gf : gradleCandidates) {
+            if (gf.exists()) {
+                String gc = readFileQuick(gf);
+                if (gc != null) {
+                    Matcher mMinG = Pattern.compile("(?:minSdkVersion|minSdk)\\s*=?\\s*(\\d+)").matcher(gc);
+                    if (mMinG.find()) {
+                        try {
+                            minSdk = Integer.parseInt(mMinG.group(1));
+                        } catch (Exception ignored) {}
+                    }
+                    Matcher mTgtG = Pattern.compile("(?:targetSdkVersion|targetSdk)\\s*=?\\s*(\\d+)").matcher(gc);
+                    if (mTgtG.find()) {
+                        try {
+                            targetSdk = Integer.parseInt(mTgtG.group(1));
+                        } catch (Exception ignored) {}
+                    }
+                    Matcher mCmpG = Pattern.compile("(?:compileSdkVersion|compileSdk)\\s*=?\\s*(\\d+)").matcher(gc);
+                    if (mCmpG.find()) {
+                        try {
+                            compileSdk = Integer.parseInt(mCmpG.group(1));
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+        }
+        if (compileSdk <= 0) {
+            compileSdk = Math.max(targetSdk, 34);
+        }
+
         int javaCount = javaSrc != null ? countFiles(javaSrc, ".java") : 0;
         int resCount = resDir != null ? countAllFiles(resDir) : 0;
 
-        Project p = new Project(dir.getName(), dir, manifest, javaSrc, resDir, pkg, minSdk, targetSdk, javaCount, resCount, true);
+        Project p = new Project(dir.getName(), dir, manifest, javaSrc, resDir, pkg, minSdk, targetSdk, compileSdk, javaCount, resCount, true);
         try {
             p.setDependencies(DependencyManager.detectProjectDependencies(p, null));
         } catch (Throwable ignored) {}

@@ -2,7 +2,11 @@ package com.rakyatid.apkcompiler;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -10,6 +14,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.*;
 import com.rakyatid.apkcompiler.engine.*;
 import com.rakyatid.apkcompiler.model.*;
@@ -19,6 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends Activity {
+
+    private static final String PREF_NAME = "apk_compiler_prefs";
+    private static final String PREF_KEY_TOUR_COMPLETED = "pref_tour_completed";
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private ToolchainManager toolchainManager;
@@ -41,6 +50,9 @@ public class MainActivity extends Activity {
     private TextView tvEmptyProjects;
 
     // UI - Tab 2 (Build)
+    private View cardSdkSettings;
+    private TextView tvSdkConfigSummary;
+    private Button btnOpenSdkSettings;
     private Button btnStartCompile;
     private ProgressBar progressBuild;
     private TextView tvBuildStep;
@@ -79,6 +91,8 @@ public class MainActivity extends Activity {
         setupActions();
         refreshToolchainUI();
         refreshProjectsList();
+        updateSdkConfigSummary();
+        checkFirstLaunchTour();
     }
 
     private void initViews() {
@@ -101,6 +115,10 @@ public class MainActivity extends Activity {
         tvActiveResCount = findViewById(R.id.tv_active_res_count);
         containerProjectsList = findViewById(R.id.container_projects_list);
         tvEmptyProjects = findViewById(R.id.tv_empty_projects);
+
+        cardSdkSettings = findViewById(R.id.card_sdk_settings);
+        tvSdkConfigSummary = findViewById(R.id.tv_sdk_config_summary);
+        btnOpenSdkSettings = findViewById(R.id.btn_open_sdk_settings);
 
         btnStartCompile = findViewById(R.id.btn_start_compile);
         progressBuild = findViewById(R.id.progress_build);
@@ -151,12 +169,28 @@ public class MainActivity extends Activity {
     private void setupActions() {
         findViewById(R.id.btn_open_clone_dialog).setOnClickListener(v -> showCloneDialog());
         findViewById(R.id.btn_open_folder_picker).setOnClickListener(v -> showFolderPicker());
-        findViewById(R.id.btn_create_sample_project).setOnClickListener(v -> createOfflineSampleProject());
         findViewById(R.id.btn_clear_log).setOnClickListener(v -> tvConsoleLog.setText(""));
         badgeToolchainHeader.setOnClickListener(v -> switchTab(2));
+
+        View btnHeaderHelp = findViewById(R.id.btn_header_help);
+        if (btnHeaderHelp != null) {
+            btnHeaderHelp.setOnClickListener(v -> showTourGuideDialog());
+        }
+
         View ivLogo = findViewById(R.id.iv_header_logo);
         if (ivLogo != null) {
-            ivLogo.setOnClickListener(v -> showAboutDialog());
+            ivLogo.setOnClickListener(v -> showTourGuideDialog());
+            ivLogo.setOnLongClickListener(v -> {
+                showAboutDialog();
+                return true;
+            });
+        }
+
+        if (btnOpenSdkSettings != null) {
+            btnOpenSdkSettings.setOnClickListener(v -> showSdkSettingsDialog());
+        }
+        if (cardSdkSettings != null) {
+            cardSdkSettings.setOnClickListener(v -> showSdkSettingsDialog());
         }
 
         btnStartCompile.setOnClickListener(v -> startCompile());
@@ -236,7 +270,8 @@ public class MainActivity extends Activity {
         tvActiveSdk.setText(p.getMinSdk() + " / " + p.getTargetSdk());
         tvActiveJavaCount.setText(String.valueOf(p.getJavaFilesCount()));
         tvActiveResCount.setText(String.valueOf(p.getResFilesCount()));
-        logToConsole("[PROYEK] Terpilih: " + p.getName() + " (" + p.getPackageName() + ")");
+        updateSdkConfigSummary();
+        logToConsole("[PROJECT] Selected: " + p.getName() + " (" + p.getPackageName() + ")");
     }
 
     private void showCloneDialog() {
@@ -738,128 +773,150 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void createOfflineSampleProject() {
-        File projectsDir = getProjectsDir();
-        File sampleDir = new File(projectsDir, "SampleApp");
-        if (sampleDir.exists()) {
-            deleteRecursive(sampleDir);
+    private void updateSdkConfigSummary() {
+        if (tvSdkConfigSummary == null) return;
+        if (activeProject != null) {
+            String platform = "Android " + activeProject.getCompileSdk();
+            if (activeProject.getCustomSdkPath() != null && !activeProject.getCustomSdkPath().isEmpty()) {
+                platform = "Custom: " + new File(activeProject.getCustomSdkPath()).getName();
+            }
+            tvSdkConfigSummary.setText("Min: " + activeProject.getMinSdk() + " • Target: " + activeProject.getTargetSdk() + " • Platform: " + platform);
+        } else {
+            tvSdkConfigSummary.setText("Min: 21 • Target: 34 • Platform: " + toolchainManager.getSelectedPlatformSdk());
+        }
+    }
+
+    private void showSdkSettingsDialog() {
+        if (isFinishing()) return;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_sdk_settings, null);
+        builder.setView(dialogView);
+        AlertDialog dialog = builder.create();
+
+        Spinner spinnerMin = dialogView.findViewById(R.id.spinner_min_sdk);
+        Spinner spinnerTarget = dialogView.findViewById(R.id.spinner_target_sdk);
+        Spinner spinnerPlatform = dialogView.findViewById(R.id.spinner_platform_sdk);
+        LinearLayout layoutCustom = dialogView.findViewById(R.id.layout_custom_sdk_path);
+        EditText etCustom = dialogView.findViewById(R.id.et_custom_sdk_path);
+        Button btnBrowse = dialogView.findViewById(R.id.btn_browse_custom_sdk);
+        Button btnCancel = dialogView.findViewById(R.id.btn_sdk_cancel);
+        Button btnApply = dialogView.findViewById(R.id.btn_sdk_apply);
+
+        final Integer[] minSdkOptions = new Integer[]{8, 14, 16, 21, 23, 24, 26, 28, 29, 30, 31, 33, 34};
+        final Integer[] targetSdkOptions = new Integer[]{10, 14, 16, 21, 23, 24, 26, 28, 29, 30, 31, 33, 34};
+        final String[] platformSdkOptions = new String[]{
+                "android-34 (Android 14)",
+                "android-33 (Android 13)",
+                "android-30 (Android 11)",
+                "android-28 (Android 9.0)",
+                "android-26 (Android 8.0)",
+                "android-24 (Android 7.0)",
+                "android-21 (Android 5.0)",
+                "Custom Path..."
+        };
+
+        ArrayAdapter<Integer> minAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, minSdkOptions);
+        spinnerMin.setAdapter(minAdapter);
+
+        ArrayAdapter<Integer> targetAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, targetSdkOptions);
+        spinnerTarget.setAdapter(targetAdapter);
+
+        ArrayAdapter<String> platformAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, platformSdkOptions);
+        spinnerPlatform.setAdapter(platformAdapter);
+
+        int curMin = activeProject != null ? activeProject.getMinSdk() : 21;
+        int curTarget = activeProject != null ? activeProject.getTargetSdk() : 34;
+        int curCompile = activeProject != null ? activeProject.getCompileSdk() : ToolchainManager.parseSdkVersion(toolchainManager.getSelectedPlatformSdk());
+
+        for (int i = 0; i < minSdkOptions.length; i++) {
+            if (minSdkOptions[i] == curMin) {
+                spinnerMin.setSelection(i);
+                break;
+            }
+        }
+        for (int i = 0; i < targetSdkOptions.length; i++) {
+            if (targetSdkOptions[i] == curTarget) {
+                spinnerTarget.setSelection(i);
+                break;
+            }
         }
 
-        File appMain = new File(sampleDir, "app/src/main");
-        File javaDir = new File(appMain, "java/com/rakyatid/sample");
-        File resVal = new File(appMain, "res/values");
-        File resLayout = new File(appMain, "res/layout");
-
-        javaDir.mkdirs();
-        resVal.mkdirs();
-        resLayout.mkdirs();
-
-        try {
-            // 1. AndroidManifest.xml
-            String manifest = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                    "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
-                    "    package=\"com.rakyatid.sample\"\n" +
-                    "    android:versionCode=\"1\"\n" +
-                    "    android:versionName=\"1.0.0\">\n" +
-                    "    <uses-sdk android:minSdkVersion=\"21\" android:targetSdkVersion=\"34\" />\n" +
-                    "    <application\n" +
-                    "        android:label=\"@string/app_name\"\n" +
-                    "        android:theme=\"@android:style/Theme.Material.NoActionBar\">\n" +
-                    "        <activity\n" +
-                    "            android:name=\".MainActivity\"\n" +
-                    "            android:exported=\"true\">\n" +
-                    "            <intent-filter>\n" +
-                    "                <action android:name=\"android.intent.action.MAIN\" />\n" +
-                    "                <category android:name=\"android.intent.category.LAUNCHER\" />\n" +
-                    "            </intent-filter>\n" +
-                    "        </activity>\n" +
-                    "    </application>\n" +
-                    "</manifest>\n";
-            writeFileContent(new File(appMain, "AndroidManifest.xml"), manifest);
-
-            // 2. strings.xml
-            String strings = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                    "<resources>\n" +
-                    "    <string name=\"app_name\">Sample Counter App</string>\n" +
-                    "    <string name=\"welcome\">Halo dari On-Device Compiler!</string>\n" +
-                    "</resources>\n";
-            writeFileContent(new File(resVal, "strings.xml"), strings);
-
-            // 3. activity_main.xml
-            String layout = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                    "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
-                    "    android:layout_width=\"match_parent\"\n" +
-                    "    android:layout_height=\"match_parent\"\n" +
-                    "    android:orientation=\"vertical\"\n" +
-                    "    android:gravity=\"center\"\n" +
-                    "    android:background=\"#0D0F12\"\n" +
-                    "    android:padding=\"20dp\">\n" +
-                    "    <TextView\n" +
-                    "        android:id=\"@+id/tv_title\"\n" +
-                    "        android:layout_width=\"wrap_content\"\n" +
-                    "        android:layout_height=\"wrap_content\"\n" +
-                    "        android:text=\"@string/welcome\"\n" +
-                    "        android:textColor=\"#38BDF8\"\n" +
-                    "        android:textSize=\"18sp\"\n" +
-                    "        android:textStyle=\"bold\" />\n" +
-                    "    <TextView\n" +
-                    "        android:id=\"@+id/tv_counter\"\n" +
-                    "        android:layout_width=\"wrap_content\"\n" +
-                    "        android:layout_height=\"wrap_content\"\n" +
-                    "        android:layout_marginTop=\"12dp\"\n" +
-                    "        android:text=\"Klik: 0\"\n" +
-                    "        android:textColor=\"#F1F5F9\"\n" +
-                    "        android:textSize=\"16sp\" />\n" +
-                    "    <Button\n" +
-                    "        android:id=\"@+id/btn_increment\"\n" +
-                    "        android:layout_width=\"wrap_content\"\n" +
-                    "        android:layout_height=\"44dp\"\n" +
-                    "        android:layout_marginTop=\"20dp\"\n" +
-                    "        android:paddingLeft=\"24dp\"\n" +
-                    "        android:paddingRight=\"24dp\"\n" +
-                    "        android:text=\"Tambah Angka\"\n" +
-                    "        android:textAllCaps=\"false\"\n" +
-                    "        android:textColor=\"#FFFFFF\" />\n" +
-                    "</LinearLayout>\n";
-            writeFileContent(new File(resLayout, "activity_main.xml"), layout);
-
-            // 4. MainActivity.java
-            String javaCode = "package com.rakyatid.sample;\n\n" +
-                    "import android.app.Activity;\n" +
-                    "import android.os.Bundle;\n" +
-                    "import android.view.View;\n" +
-                    "import android.widget.Button;\n" +
-                    "import android.widget.TextView;\n" +
-                    "import android.widget.Toast;\n\n" +
-                    "public class MainActivity extends Activity {\n" +
-                    "    private int counter = 0;\n\n" +
-                    "    @Override\n" +
-                    "    protected void onCreate(Bundle savedInstanceState) {\n" +
-                    "        super.onCreate(savedInstanceState);\n" +
-                    "        setContentView(R.layout.activity_main);\n\n" +
-                    "        final TextView tvCount = findViewById(R.id.tv_counter);\n" +
-                    "        Button btn = findViewById(R.id.btn_increment);\n\n" +
-                    "        btn.setOnClickListener(new View.OnClickListener() {\n" +
-                    "            @Override\n" +
-                    "            public void onClick(View v) {\n" +
-                    "                counter++;\n" +
-                    "                tvCount.setText(\"Klik: \" + counter);\n" +
-                    "                Toast.makeText(MainActivity.this, \"Hitungan ke-\" + counter, Toast.LENGTH_SHORT).show();\n" +
-                    "            }\n" +
-                    "        });\n" +
-                    "    }\n" +
-                    "}\n";
-            writeFileContent(new File(javaDir, "MainActivity.java"), javaCode);
-
-            refreshProjectsList();
-            Project scanned = ProjectScanner.scan(sampleDir);
-            if (scanned != null) {
-                setActiveProject(scanned);
-                switchTab(1); // Langsung pindah ke tab Kompilasi
-                Toast.makeText(this, "Proyek contoh siap dikompilasi!", Toast.LENGTH_SHORT).show();
+        String curCustomPath = (activeProject != null && activeProject.getCustomSdkPath() != null)
+                ? activeProject.getCustomSdkPath() : toolchainManager.getCustomSdkPath();
+        if (curCustomPath != null) {
+            etCustom.setText(curCustomPath);
+            spinnerPlatform.setSelection(platformSdkOptions.length - 1);
+            layoutCustom.setVisibility(View.VISIBLE);
+        } else {
+            for (int i = 0; i < platformSdkOptions.length - 1; i++) {
+                if (platformSdkOptions[i].startsWith("android-" + curCompile)) {
+                    spinnerPlatform.setSelection(i);
+                    break;
+                }
             }
-        } catch (Exception e) {
-            Toast.makeText(this, "Gagal membuat proyek contoh: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            layoutCustom.setVisibility(View.GONE);
+        }
+
+        spinnerPlatform.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position == platformSdkOptions.length - 1) {
+                    layoutCustom.setVisibility(View.VISIBLE);
+                } else {
+                    layoutCustom.setVisibility(View.GONE);
+                }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+
+        btnBrowse.setOnClickListener(v -> {
+            Toast.makeText(this, "Enter path to android.jar or SDK platforms folder", Toast.LENGTH_SHORT).show();
+        });
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnApply.setOnClickListener(v -> {
+            int selectedMin = (Integer) spinnerMin.getSelectedItem();
+            int selectedTarget = (Integer) spinnerTarget.getSelectedItem();
+            int platformPos = spinnerPlatform.getSelectedItemPosition();
+
+            String customPath = null;
+            int compileSdk = 34;
+
+            if (platformPos == platformSdkOptions.length - 1) {
+                customPath = etCustom.getText().toString().trim();
+                if (customPath.isEmpty()) customPath = null;
+            } else {
+                String plat = platformSdkOptions[platformPos].split(" ")[0]; // android-XX
+                compileSdk = ToolchainManager.parseSdkVersion(plat);
+                toolchainManager.setSelectedPlatformSdk(plat);
+            }
+
+            if (activeProject != null) {
+                activeProject.setMinSdk(selectedMin);
+                activeProject.setTargetSdk(selectedTarget);
+                activeProject.setCompileSdk(compileSdk);
+                activeProject.setCustomSdkPath(customPath);
+                tvActiveSdk.setText(selectedMin + " / " + selectedTarget);
+                logToConsole("[SDK CONFIG] Applied to " + activeProject.getName() + ": Min SDK=" + selectedMin + ", Target SDK=" + selectedTarget + ", Compile SDK=" + compileSdk);
+                Toast.makeText(this, "SDK settings applied to " + activeProject.getName(), Toast.LENGTH_SHORT).show();
+            } else {
+                toolchainManager.setCustomSdkPath(customPath);
+                logToConsole("[SDK CONFIG] Default SDK updated: Min=" + selectedMin + ", Target=" + selectedTarget);
+                Toast.makeText(this, "Default SDK settings updated", Toast.LENGTH_SHORT).show();
+            }
+
+            updateSdkConfigSummary();
+            dialog.dismiss();
+        });
+
+        dialog.show();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            int w = (int) (getResources().getDisplayMetrics().widthPixels * 0.94);
+            dialog.getWindow().setLayout(w, ViewGroup.LayoutParams.WRAP_CONTENT);
         }
     }
 
@@ -886,13 +943,234 @@ public class MainActivity extends Activity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("APK Compiler");
         builder.setIcon(R.drawable.ic_app_logo);
-        builder.setMessage("⚡ On-Device APK Compiler & Git Cloner\n\n"
+        builder.setMessage("On-Device APK Compiler & Git Cloner\n\n"
                 + "Versi: 1.0.0\n"
                 + "Target SDK: 34 (Android 14)\n"
                 + "Engine: AAPT2 + ECJ + D8 + Apksigner\n\n"
                 + "Aplikasi kompilasi native on-device Android tanpa Gradle / PC.");
         builder.setPositiveButton("Tutup", (d, w) -> d.dismiss());
+        builder.setNeutralButton("Tour Guide", (d, w) -> {
+            d.dismiss();
+            showTourGuideDialog();
+        });
         builder.show();
+    }
+
+    private void checkFirstLaunchTour() {
+        SharedPreferences prefs = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+        boolean tourCompleted = prefs.getBoolean(PREF_KEY_TOUR_COMPLETED, false);
+        if (!tourCompleted) {
+            mainHandler.postDelayed(this::showTourGuideDialog, 400);
+        }
+    }
+
+    private void setTourCompleted() {
+        SharedPreferences prefs = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+        prefs.edit().putBoolean(PREF_KEY_TOUR_COMPLETED, true).apply();
+    }
+
+    private static class TourStep {
+        final String badge;
+        final int iconRes;
+        final String title;
+        final String subtitle;
+        final String desc;
+        final String feat1;
+        final String feat2;
+        final String feat3;
+
+        TourStep(String badge, int iconRes, String title, String subtitle, String desc,
+                 String feat1, String feat2, String feat3) {
+            this.badge = badge;
+            this.iconRes = iconRes;
+            this.title = title;
+            this.subtitle = subtitle;
+            this.desc = desc;
+            this.feat1 = feat1;
+            this.feat2 = feat2;
+            this.feat3 = feat3;
+        }
+    }
+
+    private final TourStep[] tourSteps = new TourStep[] {
+        new TourStep(
+            "STEP 1 OF 4",
+            R.drawable.ic_tour_welcome,
+            "Welcome to APK Compiler",
+            "On-Device Compiler & Git Cloner",
+            "Powerful on-device Git cloner & Android compiler without PC or Termux. Build standalone APKs directly on your smartphone.",
+            "Compile standalone APKs directly on your device",
+            "Zero external dependencies - No Termux or PC needed",
+            "Complete offline pipeline: AAPT2, ECJ, D8 & apksig"
+        ),
+        new TourStep(
+            "STEP 2 OF 4",
+            R.drawable.ic_tour_projects,
+            "Projects Tab",
+            "Git Clone & Local Projects",
+            "Clone any public GitHub repository or pick any local project folder.",
+            "1-Click GitHub repository cloner with custom branch",
+            "Built-in offline sample project & quick repo presets",
+            "Folder picker for existing Android projects in storage"
+        ),
+        new TourStep(
+            "STEP 3 OF 4",
+            R.drawable.ic_tour_compiler,
+            "Compiler & SDK Tuning",
+            "Native 4-Stage Build Pipeline",
+            "1-click build pipeline (AAPT2 -> ECJ -> D8 -> apksig). Configure custom Min/Target SDKs.",
+            "Automated 4-stage build pipeline: AAPT2 -> ECJ -> D8 -> apksig",
+            "Configurable Min & Target SDK versions (Android 7 to 14)",
+            "Built-in APK signing (v1/v2) and security risk auditor"
+        ),
+        new TourStep(
+            "STEP 4 OF 4",
+            R.drawable.ic_tour_tools,
+            "Toolchain & Live Editor",
+            "Built-in AndroidX & Live Editor",
+            "Built-in AndroidX support, multi-SDK management, and in-app code editor.",
+            "Built-in AndroidX essentials & Maven dependency resolver",
+            "In-app code editor with syntax highlighting for Java & XML",
+            "Real-time compiler console with instant install & share"
+        )
+    };
+
+    public void showTourGuideDialog() {
+        if (isFinishing()) return;
+
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_tour_guide);
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            int screenWidth = getResources().getDisplayMetrics().widthPixels;
+            int maxWidth = (int) (480 * getResources().getDisplayMetrics().density);
+            int dialogWidth = Math.min((int) (screenWidth * 0.92f), maxWidth);
+            dialog.getWindow().setLayout(dialogWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+
+        final int[] currentStep = new int[]{0};
+
+        TextView tvBadge = dialog.findViewById(R.id.tv_tour_step_badge);
+        View btnSkip = dialog.findViewById(R.id.btn_tour_skip);
+        View contentContainer = dialog.findViewById(R.id.container_tour_content);
+        ImageView ivIcon = dialog.findViewById(R.id.iv_tour_icon);
+        TextView tvTitle = dialog.findViewById(R.id.tv_tour_title);
+        TextView tvSubtitle = dialog.findViewById(R.id.tv_tour_subtitle);
+        TextView tvDesc = dialog.findViewById(R.id.tv_tour_desc);
+        TextView tvFeat1 = dialog.findViewById(R.id.tv_tour_feat_1);
+        TextView tvFeat2 = dialog.findViewById(R.id.tv_tour_feat_2);
+        TextView tvFeat3 = dialog.findViewById(R.id.tv_tour_feat_3);
+
+        View[] dots = new View[]{
+            dialog.findViewById(R.id.dot_tour_0),
+            dialog.findViewById(R.id.dot_tour_1),
+            dialog.findViewById(R.id.dot_tour_2),
+            dialog.findViewById(R.id.dot_tour_3)
+        };
+
+        Button btnPrev = dialog.findViewById(R.id.btn_tour_prev);
+        Button btnNext = dialog.findViewById(R.id.btn_tour_next);
+
+        Runnable updateUI = new Runnable() {
+            @Override
+            public void run() {
+                int step = currentStep[0];
+                TourStep s = tourSteps[step];
+
+                tvBadge.setText(s.badge);
+                ivIcon.setImageResource(s.iconRes);
+                tvTitle.setText(s.title);
+                tvSubtitle.setText(s.subtitle);
+                tvDesc.setText(s.desc);
+                tvFeat1.setText(s.feat1);
+                tvFeat2.setText(s.feat2);
+                tvFeat3.setText(s.feat3);
+
+                btnPrev.setVisibility(step > 0 ? View.VISIBLE : View.GONE);
+                if (step == tourSteps.length - 1) {
+                    btnNext.setText("Get Started");
+                    btnSkip.setVisibility(View.GONE);
+                } else {
+                    btnNext.setText("Next");
+                    btnSkip.setVisibility(View.VISIBLE);
+                }
+
+                float density = getResources().getDisplayMetrics().density;
+                int activeWidth = (int) (18 * density);
+                int inactiveWidth = (int) (6 * density);
+                int dotHeight = (int) (6 * density);
+
+                for (int i = 0; i < dots.length; i++) {
+                    boolean isActive = (i == step);
+                    dots[i].setBackgroundResource(isActive ? R.drawable.tour_dot_active : R.drawable.tour_dot_inactive);
+                    LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) dots[i].getLayoutParams();
+                    lp.width = isActive ? activeWidth : inactiveWidth;
+                    lp.height = dotHeight;
+                    dots[i].setLayoutParams(lp);
+                }
+            }
+        };
+
+        updateUI.run();
+
+        for (int i = 0; i < dots.length; i++) {
+            final int targetStep = i;
+            dots[i].setOnClickListener(v -> {
+                if (currentStep[0] != targetStep) {
+                    currentStep[0] = targetStep;
+                    if (contentContainer != null) {
+                        contentContainer.animate().alpha(0f).setDuration(100).withEndAction(() -> {
+                            updateUI.run();
+                            contentContainer.animate().alpha(1f).setDuration(140).start();
+                        }).start();
+                    } else {
+                        updateUI.run();
+                    }
+                }
+            });
+        }
+
+        btnNext.setOnClickListener(v -> {
+            if (currentStep[0] < tourSteps.length - 1) {
+                currentStep[0]++;
+                if (contentContainer != null) {
+                    contentContainer.animate().alpha(0f).setDuration(100).withEndAction(() -> {
+                        updateUI.run();
+                        contentContainer.animate().alpha(1f).setDuration(140).start();
+                    }).start();
+                } else {
+                    updateUI.run();
+                }
+            } else {
+                setTourCompleted();
+                dialog.dismiss();
+                Toast.makeText(MainActivity.this, "Tour completed! Re-open anytime via the ? icon.", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        btnPrev.setOnClickListener(v -> {
+            if (currentStep[0] > 0) {
+                currentStep[0]--;
+                if (contentContainer != null) {
+                    contentContainer.animate().alpha(0f).setDuration(100).withEndAction(() -> {
+                        updateUI.run();
+                        contentContainer.animate().alpha(1f).setDuration(140).start();
+                    }).start();
+                } else {
+                    updateUI.run();
+                }
+            }
+        });
+
+        btnSkip.setOnClickListener(v -> {
+            setTourCompleted();
+            dialog.dismiss();
+            Toast.makeText(MainActivity.this, "Tour skipped. Re-open anytime via the ? icon.", Toast.LENGTH_SHORT).show();
+        });
+
+        dialog.show();
     }
 
     private void deleteRecursive(File f) {

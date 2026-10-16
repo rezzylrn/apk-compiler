@@ -11,8 +11,10 @@ public class Project {
     private final File javaSrcDir;
     private final File resDir;
     private final String packageName;
-    private final int minSdk;
-    private final int targetSdk;
+    private int minSdk;
+    private int targetSdk;
+    private int compileSdk;
+    private String customSdkPath;
     private final int javaFilesCount;
     private final int resFilesCount;
     private final boolean valid;
@@ -21,6 +23,13 @@ public class Project {
     public Project(String name, File rootDir, File manifestFile, File javaSrcDir, File resDir,
                    String packageName, int minSdk, int targetSdk, int javaFilesCount,
                    int resFilesCount, boolean valid) {
+        this(name, rootDir, manifestFile, javaSrcDir, resDir, packageName, minSdk, targetSdk,
+                Math.max(targetSdk, 34), javaFilesCount, resFilesCount, valid);
+    }
+
+    public Project(String name, File rootDir, File manifestFile, File javaSrcDir, File resDir,
+                   String packageName, int minSdk, int targetSdk, int compileSdk,
+                   int javaFilesCount, int resFilesCount, boolean valid) {
         this.name = name;
         this.rootDir = rootDir;
         this.manifestFile = manifestFile;
@@ -29,6 +38,7 @@ public class Project {
         this.packageName = packageName;
         this.minSdk = minSdk;
         this.targetSdk = targetSdk;
+        this.compileSdk = compileSdk > 0 ? compileSdk : Math.max(targetSdk, 34);
         this.javaFilesCount = javaFilesCount;
         this.resFilesCount = resFilesCount;
         this.valid = valid;
@@ -62,8 +72,32 @@ public class Project {
         return minSdk;
     }
 
+    public void setMinSdk(int minSdk) {
+        this.minSdk = minSdk;
+    }
+
     public int getTargetSdk() {
         return targetSdk;
+    }
+
+    public void setTargetSdk(int targetSdk) {
+        this.targetSdk = targetSdk;
+    }
+
+    public int getCompileSdk() {
+        return compileSdk > 0 ? compileSdk : 34;
+    }
+
+    public void setCompileSdk(int compileSdk) {
+        this.compileSdk = compileSdk;
+    }
+
+    public String getCustomSdkPath() {
+        return customSdkPath;
+    }
+
+    public void setCustomSdkPath(String customSdkPath) {
+        this.customSdkPath = customSdkPath;
     }
 
     public int getJavaFilesCount() {

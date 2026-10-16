@@ -1,6 +1,7 @@
 package com.rakyatid.apkcompiler.engine;
 
 import android.content.Context;
+import com.rakyatid.apkcompiler.model.Project;
 import com.rakyatid.apkcompiler.model.ToolchainItem;
 
 import java.io.BufferedInputStream;
@@ -16,13 +17,20 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ToolchainManager {
 
     private final Context context;
     private final File toolchainDir;
     private final List<ToolchainItem> items = new ArrayList<>();
+
+    // Platform SDK management
+    private String selectedPlatformSdk = "android-34";
+    private String customSdkPath = null;
 
     public interface InstallListener {
         void onProgress(String componentName, int percentage, String statusText);
@@ -82,14 +90,17 @@ public class ToolchainManager {
         ));
 
         // 4. Android Platform SDK (android.jar)
-        File androidJarFile = new File(toolchainDir, "android.jar");
+        File androidJarFile = getAndroidJar();
+        int apiVer = parseSdkVersion(selectedPlatformSdk);
+        String dlUrl = "https://raw.githubusercontent.com/Sable/android-platforms/master/android-" + (apiVer > 0 && apiVer <= 30 ? apiVer : 30) + "/android.jar";
+        String sha256 = (apiVer == 30) ? "ffb9f6f7bb313642d8c4abf28566af829405e370ad9151e2258811a514b8bbb6" : null;
         items.add(new ToolchainItem(
                 "android_jar",
-                "Android SDK Platform (android.jar)",
+                "Android SDK Platform (" + selectedPlatformSdk + ")",
                 "Stubs API Android Platform untuk resolusi library dan framework Android",
-                androidJarFile,
-                "https://raw.githubusercontent.com/Sable/android-platforms/master/android-30/android.jar",
-                "ffb9f6f7bb313642d8c4abf28566af829405e370ad9151e2258811a514b8bbb6"
+                androidJarFile != null ? androidJarFile : new File(toolchainDir, "android.jar"),
+                dlUrl,
+                sha256
         ));
 
         // 5. Android Debug Keystore
@@ -117,6 +128,123 @@ public class ToolchainManager {
         // Pastikan keystore & androidx siap digunakan
         ensureKeystoreReady();
         ensureAndroidxReady();
+    }
+
+    public List<String> getAvailablePlatformSdks() {
+        return Arrays.asList("android-34", "android-33", "android-30", "android-28", "android-26", "android-24", "android-21");
+    }
+
+    public String getSelectedPlatformSdk() {
+        return selectedPlatformSdk;
+    }
+
+    public void setSelectedPlatformSdk(String sdk) {
+        if (sdk != null && !sdk.trim().isEmpty()) {
+            this.selectedPlatformSdk = sdk.trim();
+            updateAndroidJarItem();
+        }
+    }
+
+    public String getCustomSdkPath() {
+        return customSdkPath;
+    }
+
+    public void setCustomSdkPath(String path) {
+        this.customSdkPath = (path != null && !path.trim().isEmpty()) ? path.trim() : null;
+        updateAndroidJarItem();
+    }
+
+    public static int parseSdkVersion(String sdk) {
+        if (sdk == null) return 34;
+        Matcher m = Pattern.compile("(\\d+)").matcher(sdk);
+        if (m.find()) {
+            try {
+                return Integer.parseInt(m.group(1));
+            } catch (Exception ignored) {}
+        }
+        return 34;
+    }
+
+    public File getAndroidJar() {
+        return getAndroidJar(parseSdkVersion(selectedPlatformSdk), customSdkPath);
+    }
+
+    public File getAndroidJarForProject(Project project) {
+        int sdk = project != null ? project.getCompileSdk() : parseSdkVersion(selectedPlatformSdk);
+        String custom = (project != null && project.getCustomSdkPath() != null && !project.getCustomSdkPath().isEmpty())
+                ? project.getCustomSdkPath() : customSdkPath;
+        return getAndroidJar(sdk, custom);
+    }
+
+    public File getAndroidJar(int compileSdk, String customPath) {
+        // 1. Cek path custom SDK jika diberikan (baik file .jar langsung maupun folder SDK)
+        if (customPath != null && !customPath.trim().isEmpty()) {
+            File customFile = new File(customPath.trim());
+            if (customFile.isFile() && customFile.getName().endsWith(".jar") && customFile.exists()) {
+                return customFile;
+            }
+            if (customFile.isDirectory()) {
+                File directJar = new File(customFile, "android.jar");
+                if (directJar.exists()) return directJar;
+
+                File versionedJar = new File(customFile, "platforms/android-" + compileSdk + "/android.jar");
+                if (versionedJar.exists()) return versionedJar;
+
+                File anyPlatformDir = new File(customFile, "platforms");
+                if (anyPlatformDir.isDirectory()) {
+                    File[] sub = anyPlatformDir.listFiles((dir, name) -> name.startsWith("android-"));
+                    if (sub != null && sub.length > 0) {
+                        for (File s : sub) {
+                            File j = new File(s, "android.jar");
+                            if (j.exists()) return j;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Cek versi spesifik di toolchainDir
+        if (compileSdk > 0) {
+            File vJar = new File(toolchainDir, "android-" + compileSdk + ".jar");
+            if (vJar.exists() && vJar.length() > 0) return vJar;
+
+            File vSubJar = new File(toolchainDir, "platforms/android-" + compileSdk + "/android.jar");
+            if (vSubJar.exists() && vSubJar.length() > 0) return vSubJar;
+
+            // System SDK path
+            File sysJar = new File("/home/hatch/android-sdk/platforms/android-" + compileSdk + "/android.jar");
+            if (sysJar.exists() && sysJar.length() > 0) return sysJar;
+        }
+
+        // 3. Fallback ke android.jar di toolchainDir
+        File defaultJar = new File(toolchainDir, "android.jar");
+        if (defaultJar.exists() && defaultJar.length() > 0) return defaultJar;
+
+        // 4. Fallback ke platform sistem default (android-34)
+        File sysDefault = new File("/home/hatch/android-sdk/platforms/android-34/android.jar");
+        if (sysDefault.exists() && sysDefault.length() > 0) return sysDefault;
+
+        return defaultJar;
+    }
+
+    public void updateAndroidJarItem() {
+        File androidJarFile = getAndroidJar();
+        int apiVer = parseSdkVersion(selectedPlatformSdk);
+        String dlUrl = "https://raw.githubusercontent.com/Sable/android-platforms/master/android-" + (apiVer > 0 && apiVer <= 30 ? apiVer : 30) + "/android.jar";
+        String sha256 = (apiVer == 30) ? "ffb9f6f7bb313642d8c4abf28566af829405e370ad9151e2258811a514b8bbb6" : null;
+        for (int i = 0; i < items.size(); i++) {
+            if ("android_jar".equals(items.get(i).getId())) {
+                items.set(i, new ToolchainItem(
+                        "android_jar",
+                        "Android SDK Platform (" + selectedPlatformSdk + ")",
+                        "Stubs API Android Platform untuk resolusi library dan framework Android",
+                        androidJarFile != null ? androidJarFile : new File(toolchainDir, "android.jar"),
+                        dlUrl,
+                        sha256
+                ));
+                break;
+            }
+        }
     }
 
     public void ensureAndroidxReady() {
@@ -169,6 +297,9 @@ public class ToolchainManager {
             if (nativeAapt2 != null && nativeAapt2.exists() && nativeAapt2.length() > 0) {
                 return nativeAapt2;
             }
+        }
+        if ("android_jar".equals(id)) {
+            return getAndroidJar();
         }
         for (ToolchainItem item : items) {
             if (item.getId().equals(id)) {
@@ -223,11 +354,18 @@ public class ToolchainManager {
         }).start();
     }
 
-    private interface DownloadProgress {
+    public interface DownloadProgress {
         void onProgress(int percent, String msg);
     }
 
-    private boolean downloadFile(String fileUrl, File destFile, String expectedSha256, DownloadProgress progress) {
+    public boolean downloadPlatformSdk(int apiLevel, DownloadProgress progress) {
+        File targetFile = new File(toolchainDir, "android-" + apiLevel + ".jar");
+        if (targetFile.exists() && targetFile.length() > 0) return true;
+        String url = "https://raw.githubusercontent.com/Sable/android-platforms/master/android-" + apiLevel + "/android.jar";
+        return downloadFile(url, targetFile, null, progress);
+    }
+
+    public boolean downloadFile(String fileUrl, File destFile, String expectedSha256, DownloadProgress progress) {
         File tempFile = null;
         try {
             if (fileUrl == null || !fileUrl.startsWith("https://")) {
@@ -286,9 +424,13 @@ public class ToolchainManager {
                 current += read;
                 if (total > 0) {
                     int pct = (int) ((current * 100) / total);
-                    progress.onProgress(pct, (current / 1024) + " KB / " + (total / 1024) + " KB (" + pct + "%)");
+                    if (progress != null) {
+                        progress.onProgress(pct, (current / 1024) + " KB / " + (total / 1024) + " KB (" + pct + "%)");
+                    }
                 } else {
-                    progress.onProgress(50, (current / 1024) + " KB diunduh");
+                    if (progress != null) {
+                        progress.onProgress(50, (current / 1024) + " KB diunduh");
+                    }
                 }
             }
 

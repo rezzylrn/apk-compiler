@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/card_bg"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SDK Version Settings"
+        android:textColor="@color/text_primary"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Configure SDK versions for Android 14+ compatibility and legacy dependencies."
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp" />
+
+    <!-- Min SDK -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:text="Min SDK (Minimum Android Version)"
+        android:textColor="@color/text_muted"
+        android:textSize="11sp" />
+
+    <Spinner
+        android:id="@+id/spinner_min_sdk"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/edit_text_bg"
+        android:paddingLeft="8dp" />
+
+    <!-- Target SDK -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Target SDK (Target Android Version)"
+        android:textColor="@color/text_muted"
+        android:textSize="11sp" />
+
+    <Spinner
+        android:id="@+id/spinner_target_sdk"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/edit_text_bg"
+        android:paddingLeft="8dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="*Target SDK &lt; 23 will be automatically adjusted to 24 for Android 14+ compatibility."
+        android:textColor="@color/accent_cyan"
+        android:textSize="10sp" />
+
+    <!-- Platform SDK -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Platform SDK / Compile SDK (android.jar)"
+        android:textColor="@color/text_muted"
+        android:textSize="11sp" />
+
+    <Spinner
+        android:id="@+id/spinner_platform_sdk"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/edit_text_bg"
+        android:paddingLeft="8dp" />
+
+    <!-- Custom SDK Path (Visible if Custom chosen) -->
+    <LinearLayout
+        android:id="@+id/layout_custom_sdk_path"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Custom SDK / android.jar Path:"
+            android:textColor="@color/text_muted"
+            android:textSize="11sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/et_custom_sdk_path"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:background="@drawable/edit_text_bg"
+                android:hint="/path/to/android.jar or SDK folder"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:singleLine="true"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_muted"
+                android:textSize="12sp" />
+
+            <Button
+                android:id="@+id/btn_browse_custom_sdk"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_marginLeft="6dp"
+                android:background="@drawable/btn_secondary"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:text="Browse"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Dialog Actions -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_sdk_cancel"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_marginRight="6dp"
+            android:layout_weight="1"
+            android:background="@drawable/btn_secondary"
+            android:text="Cancel"
+            android:textAllCaps="false"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/btn_sdk_apply"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_marginLeft="6dp"
+            android:layout_weight="1"
+            android:background="@drawable/btn_primary"
+            android:text="Apply"
+            android:textAllCaps="false"
+            android:textColor="#0B132B"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

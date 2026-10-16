@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- Card / Shield base -->
+    <path
+        android:fillColor="#141720"
+        android:strokeColor="#2A303C"
+        android:strokeWidth="1.2"
+        android:pathData="M32,6 L52,14 L52,36 C52,47 43,55 32,58 C21,55 12,47 12,36 L12,14 Z" />
+    <!-- Editor window frame -->
+    <path
+        android:fillColor="#1B2130"
+        android:strokeColor="#6366F1"
+        android:strokeWidth="1.8"
+        android:strokeLineJoin="round"
+        android:pathData="M20,20 L44,20 A2,2 0 0,1 46,22 L46,42 A2,2 0 0,1 44,44 L20,44 A2,2 0 0,1 18,42 L18,22 A2,2 0 0,1 20,20 Z" />
+    <!-- Window top bar -->
+    <path
+        android:strokeColor="#2A303C"
+        android:strokeWidth="1.2"
+        android:pathData="M18,26 L46,26" />
+    <!-- Window dot -->
+    <path
+        android:fillColor="#6366F1"
+        android:pathData="M22,23m-1,0a1,1 0 1,0 2,0a1,1 0 1,0 -2,0" />
+    <!-- Code brackets `< >` -->
+    <path
+        android:strokeColor="#00E5FF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M26,31 L23,34.5 L26,38 M38,31 L41,34.5 L38,38" />
+    <!-- Center slash `/` -->
+    <path
+        android:strokeColor="#94A3B8"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M33,30 L31,39" />
+</vector>

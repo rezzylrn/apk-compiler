@@ -17,7 +17,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Pilih Folder Proyek"
+            android:text="Select Project Folder"
             android:textColor="@color/text_primary"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -29,7 +29,7 @@
             android:background="@drawable/btn_secondary"
             android:paddingLeft="12dp"
             android:paddingRight="12dp"
-            android:text="Ke Atas (..)"
+            android:text="Up (..)"
             android:textAllCaps="false"
             android:textColor="@color/text_primary"
             android:textSize="11sp" />
@@ -93,7 +93,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="120dp"
                 android:gravity="center"
-                android:text="Tidak ada subfolder di direktori ini"
+                android:text="No subdirectories found in this folder"
                 android:textColor="@color/text_muted"
                 android:textSize="12sp"
                 android:visibility="gone" />
@@ -115,7 +115,7 @@
             android:background="@drawable/btn_secondary"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
-            android:text="Batal"
+            android:text="Cancel"
             android:textAllCaps="false"
             android:textColor="@color/text_primary"
             android:textSize="12sp" />
@@ -128,7 +128,7 @@
             android:background="@drawable/btn_primary"
             android:paddingLeft="18dp"
             android:paddingRight="18dp"
-            android:text="Gunakan Folder Ini"
+            android:text="Use This Folder"
             android:textAllCaps="false"
             android:textColor="#0B132B"
             android:textSize="12sp"

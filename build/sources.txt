@@ -1,7 +1,7 @@
 /home/hatch/workspace/apk-compiler/build/gen/com/rakyatid/apkcompiler/R.java
 /home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/model/Dependency.java
-/home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/model/Project.java
 /home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/model/ToolchainItem.java
+/home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/model/Project.java
 /home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/engine/ApkSignerUtil.java
 /home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/engine/ZipAlignUtil.java
 /home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/engine/SecurityAuditor.java

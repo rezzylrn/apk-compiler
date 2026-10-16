@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- Card / Shield base -->
+    <path
+        android:fillColor="#141720"
+        android:strokeColor="#2A303C"
+        android:strokeWidth="1.2"
+        android:pathData="M32,6 L52,14 L52,36 C52,47 43,55 32,58 C21,55 12,47 12,36 L12,14 Z" />
+    <!-- Android Mascot Dome -->
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M24,28 A8,8 0 0,1 40,28 Z" />
+    <!-- Eyes -->
+    <path
+        android:fillColor="#0D0F12"
+        android:pathData="M27.5,25.5m-1,0a1,1 0 1,0 2,0a1,1 0 1,0 -2,0 M36.5,25.5m-1,0a1,1 0 1,0 2,0a1,1 0 1,0 -2,0" />
+    <!-- Antennae -->
+    <path
+        android:strokeColor="#00E5FF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M26,21 L23,17 M38,21 L41,17" />
+    <!-- Lower Body / Hex Shield -->
+    <path
+        android:fillColor="#6366F1"
+        android:pathData="M23,30 L41,30 A2,2 0 0,1 43,32 L43,41 A2,2 0 0,1 41,43 L23,43 A2,2 0 0,1 21,41 L21,32 A2,2 0 0,1 23,30 Z" />
+    <!-- Code Brackets '<>' on chest -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M28,34 L25,36.5 L28,39 M36,34 L39,36.5 L36,39" />
+</vector>
