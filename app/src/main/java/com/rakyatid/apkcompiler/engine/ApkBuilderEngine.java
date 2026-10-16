@@ -177,9 +177,13 @@ public class ApkBuilderEngine {
 
                 listener.onSuccess(finalApk, duration);
 
-            } catch (Exception e) {
-                listener.onLog("[FATAL ERROR] " + e.getMessage());
-                listener.onError("Kompilasi gagal: " + e.getMessage());
+            } catch (Throwable e) {
+                Throwable cause = e.getCause() != null ? e.getCause() : e;
+                listener.onLog("[FATAL ERROR] " + cause.getClass().getSimpleName() + ": " + cause.getMessage());
+                StringWriter sw = new StringWriter();
+                cause.printStackTrace(new PrintWriter(sw));
+                listener.onLog(sw.toString());
+                listener.onError("Kompilasi gagal: " + (cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName()));
             } finally {
                 isBuilding = false;
             }

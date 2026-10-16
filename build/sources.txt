@@ -6,7 +6,7 @@
 /home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/engine/ApkFileProvider.java
 /home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/engine/ProjectScanner.java
 /home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/engine/ToolchainManager.java
-/home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/engine/ApkBuilderEngine.java
 /home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/engine/ApkSignerUtil.java
+/home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/engine/ApkBuilderEngine.java
 /home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/MainActivity.java
 /home/hatch/workspace/apk-compiler/app/src/main/java/javax/lang/model/SourceVersion.java

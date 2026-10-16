@@ -64,6 +64,11 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            mainHandler.post(() -> {
+                showCrashDialog("Aplikasi Mengalami Crash", throwable);
+            });
+        });
         setContentView(R.layout.activity_main);
 
         toolchainManager = new ToolchainManager(this);
@@ -396,65 +401,83 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void showCrashDialog(String title, Throwable t) {
+        java.io.StringWriter sw = new java.io.StringWriter();
+        t.printStackTrace(new java.io.PrintWriter(sw));
+        String stackTrace = sw.toString();
+        logToConsole("[CRASH] " + stackTrace);
+        try {
+            new AlertDialog.Builder(MainActivity.this)
+                    .setTitle(title)
+                    .setMessage(stackTrace)
+                    .setPositiveButton("Tutup", null)
+                    .show();
+        } catch (Throwable ignored) {}
+    }
+
     private void startCompile() {
-        if (activeProject == null) {
-            Toast.makeText(this, "Pilih proyek terlebih dahulu", Toast.LENGTH_SHORT).show();
-            return;
+        try {
+            if (activeProject == null) {
+                Toast.makeText(this, "Pilih proyek terlebih dahulu", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!toolchainManager.isAllReady()) {
+                Toast.makeText(this, "Toolchain belum lengkap. Membuka tab Toolchain...", Toast.LENGTH_SHORT).show();
+                switchTab(2);
+                return;
+            }
+
+            btnStartCompile.setEnabled(false);
+            progressBuild.setVisibility(View.VISIBLE);
+            progressBuild.setProgress(0);
+            cardBuildOutput.setVisibility(View.GONE);
+            tvBuildStep.setText("Sedang mengompilasi...");
+
+            builderEngine.buildProject(activeProject, new ApkBuilderEngine.BuildListener() {
+                @Override
+                public void onLog(String line) {
+                    mainHandler.post(() -> logToConsole(line));
+                }
+
+                @Override
+                public void onProgress(int step, int totalSteps, String message) {
+                    mainHandler.post(() -> {
+                        int pct = (step * 100) / totalSteps;
+                        progressBuild.setProgress(pct);
+                        tvBuildStep.setText(message);
+                    });
+                }
+
+                @Override
+                public void onSuccess(File finalApk, long durationMs) {
+                    mainHandler.post(() -> {
+                        lastBuiltApk = finalApk;
+                        btnStartCompile.setEnabled(true);
+                        progressBuild.setProgress(100);
+                        tvBuildStep.setText("Selesai dalam " + String.format("%.2f", durationMs / 1000.0) + " detik");
+
+                        cardBuildOutput.setVisibility(View.VISIBLE);
+                        tvOutputSize.setText(String.format("%.2f MB", finalApk.length() / (1024.0 * 1024.0)));
+                        tvOutputPath.setText(finalApk.getAbsolutePath());
+
+                        Toast.makeText(MainActivity.this, "Kompilasi Sukses!", Toast.LENGTH_LONG).show();
+                    });
+                }
+
+                @Override
+                public void onError(String error) {
+                    mainHandler.post(() -> {
+                        btnStartCompile.setEnabled(true);
+                        progressBuild.setVisibility(View.GONE);
+                        tvBuildStep.setText("Gagal: " + error);
+                        Toast.makeText(MainActivity.this, error, Toast.LENGTH_LONG).show();
+                    });
+                }
+            });
+        } catch (Throwable t) {
+            showCrashDialog("Error Memulai Kompilasi", t);
         }
-
-        if (!toolchainManager.isAllReady()) {
-            Toast.makeText(this, "Toolchain belum lengkap. Membuka tab Toolchain...", Toast.LENGTH_SHORT).show();
-            switchTab(2);
-            return;
-        }
-
-        btnStartCompile.setEnabled(false);
-        progressBuild.setVisibility(View.VISIBLE);
-        progressBuild.setProgress(0);
-        cardBuildOutput.setVisibility(View.GONE);
-        tvBuildStep.setText("Sedang mengompilasi...");
-
-        builderEngine.buildProject(activeProject, new ApkBuilderEngine.BuildListener() {
-            @Override
-            public void onLog(String line) {
-                mainHandler.post(() -> logToConsole(line));
-            }
-
-            @Override
-            public void onProgress(int step, int totalSteps, String message) {
-                mainHandler.post(() -> {
-                    int pct = (step * 100) / totalSteps;
-                    progressBuild.setProgress(pct);
-                    tvBuildStep.setText(message);
-                });
-            }
-
-            @Override
-            public void onSuccess(File finalApk, long durationMs) {
-                mainHandler.post(() -> {
-                    lastBuiltApk = finalApk;
-                    btnStartCompile.setEnabled(true);
-                    progressBuild.setProgress(100);
-                    tvBuildStep.setText("Selesai dalam " + String.format("%.2f", durationMs / 1000.0) + " detik");
-
-                    cardBuildOutput.setVisibility(View.VISIBLE);
-                    tvOutputSize.setText(String.format("%.2f MB", finalApk.length() / (1024.0 * 1024.0)));
-                    tvOutputPath.setText(finalApk.getAbsolutePath());
-
-                    Toast.makeText(MainActivity.this, "Kompilasi Sukses!", Toast.LENGTH_LONG).show();
-                });
-            }
-
-            @Override
-            public void onError(String error) {
-                mainHandler.post(() -> {
-                    btnStartCompile.setEnabled(true);
-                    progressBuild.setVisibility(View.GONE);
-                    tvBuildStep.setText("Gagal: " + error);
-                    Toast.makeText(MainActivity.this, error, Toast.LENGTH_LONG).show();
-                });
-            }
-        });
     }
 
     private void installApkFile(File apkFile) {

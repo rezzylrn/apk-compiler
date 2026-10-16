@@ -25,37 +25,52 @@ public class ApkSignerUtil {
                                   String ksPass, String keyAlias, String keyPass,
                                   File apksignerTool, LogCallback callback) {
         try {
-            // 1. In-process official ApkSignerTool (Google Android SDK apksigner)
-            Class<?> signerClass = null;
+            // 1. In-process official Google apksig (Signature Scheme v1 + v2 + v3)
+            Class<?> apkSignerClass = null;
             try {
-                signerClass = Class.forName("com.android.apksigner.ApkSignerTool");
+                apkSignerClass = Class.forName("com.android.apksig.ApkSigner");
             } catch (ClassNotFoundException ignored) {}
 
-            if (signerClass != null && keystoreFile != null && keystoreFile.exists()) {
-                callback.log("[SIGN] Menjalankan official ApkSignerTool (v1 + v2 + v3)...");
-                List<String> signArgs = new ArrayList<>();
-                signArgs.add("sign");
-                signArgs.add("--ks");
-                signArgs.add(keystoreFile.getAbsolutePath());
-                signArgs.add("--ks-pass");
-                signArgs.add("pass:" + ksPass);
-                signArgs.add("--key-pass");
-                signArgs.add("pass:" + keyPass);
-                signArgs.add("--ks-key-alias");
-                signArgs.add(keyAlias);
-                signArgs.add("--v1-signing-enabled");
-                signArgs.add("true");
-                signArgs.add("--v2-signing-enabled");
-                signArgs.add("true");
-                signArgs.add("--out");
-                signArgs.add(outputApk.getAbsolutePath());
-                signArgs.add(inputApk.getAbsolutePath());
+            if (apkSignerClass != null && keystoreFile != null && keystoreFile.exists()) {
+                callback.log("[SIGN] Membaca kunci dari keystore: " + keystoreFile.getName());
+                KeyStore ks = loadKeyStore(keystoreFile, ksPass);
+                if (!ks.containsAlias(keyAlias)) {
+                    Enumeration<String> aliases = ks.aliases();
+                    if (aliases.hasMoreElements()) {
+                        keyAlias = aliases.nextElement();
+                    } else {
+                        callback.log("[SIGN ERROR] Keystore tidak memiliki alias kunci.");
+                        return false;
+                    }
+                }
 
-                Method mainMethod = signerClass.getMethod("main", String[].class);
-                mainMethod.invoke(null, (Object) signArgs.toArray(new String[0]));
+                PrivateKey privateKey = (PrivateKey) ks.getKey(keyAlias, keyPass.toCharArray());
+                Certificate cert = ks.getCertificate(keyAlias);
+                if (privateKey == null || !(cert instanceof X509Certificate)) {
+                    callback.log("[SIGN ERROR] Gagal memuat kunci privat / sertifikat X509.");
+                    return false;
+                }
+
+                callback.log("[SIGN] Menandatangani APK via Google apksig (v1 + v2 + v3)...");
+                com.android.apksig.ApkSigner.SignerConfig signerConfig =
+                        new com.android.apksig.ApkSigner.SignerConfig.Builder(
+                                keyAlias,
+                                privateKey,
+                                Collections.singletonList((X509Certificate) cert)
+                        ).build();
+
+                com.android.apksig.ApkSigner signer = new com.android.apksig.ApkSigner.Builder(Collections.singletonList(signerConfig))
+                        .setInputApk(inputApk)
+                        .setOutputApk(outputApk)
+                        .setV1SigningEnabled(true)
+                        .setV2SigningEnabled(true)
+                        .setV3SigningEnabled(true)
+                        .build();
+
+                signer.sign();
 
                 if (outputApk.exists() && outputApk.length() > 0) {
-                    callback.log("[SIGN] Penandatanganan resmi ApkSignerTool selesai (v1 + v2).");
+                    callback.log("[SIGN] Penandatanganan resmi apksig selesai (v1 + v2 + v3 sukses).");
                     return true;
                 }
             }
@@ -97,9 +112,12 @@ public class ApkSignerUtil {
             callback.log("[SIGN] Menjalankan Java v1 Signer bawaan...");
             return signApkV1(inputApk, outputApk, keystoreFile, ksPass, keyAlias, keyPass, callback);
 
-        } catch (Exception e) {
-            Throwable cause = (e instanceof InvocationTargetException && e.getCause() != null) ? e.getCause() : e;
-            callback.log("[SIGN ERROR] " + cause.getMessage());
+        } catch (Throwable t) {
+            Throwable cause = t.getCause() != null ? t.getCause() : t;
+            callback.log("[SIGN ERROR] " + cause.getClass().getSimpleName() + ": " + cause.getMessage());
+            StringWriter sw = new StringWriter();
+            cause.printStackTrace(new PrintWriter(sw));
+            callback.log(sw.toString());
             return false;
         }
     }

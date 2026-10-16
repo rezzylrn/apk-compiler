@@ -28,12 +28,27 @@ $BT/aapt2 link -o $OUT/unsigned.apk \
   --target-sdk-version 34 \
   $OUT/res.zip
 
+# Ensure apksig-clean.jar is generated without Conscrypt / desktop native classes
+if [ ! -f $PROJ/apksig-clean.jar ]; then
+  echo "[2.5/7] generating apksig-clean.jar..."
+  python3 -c '
+import zipfile, os
+src_jar = "'$SDK'/build-tools/34.0.0/lib/apksigner.jar"
+dst_jar = "'$PROJ'/apksig-clean.jar"
+with zipfile.ZipFile(src_jar) as src:
+    with zipfile.ZipFile(dst_jar, "w") as dst:
+        for item in src.infolist():
+            if item.filename.startswith("com/android/apksig/") and item.filename.endswith(".class"):
+                dst.writestr(item.filename, src.read(item.filename))
+'
+fi
+
 echo "[3/7] javac compile sources..."
 find $OUT/gen -name "*.java" > $OUT/sources.txt
 find $APP/java -name "*.java" >> $OUT/sources.txt
 cat $OUT/sources.txt
 javac -source 8 -target 8 -nowarn -encoding UTF-8 \
-  -cp $AJAR \
+  -cp $AJAR:$PROJ/apksig-clean.jar \
   -d $OUT/obj \
   @$OUT/sources.txt
 
@@ -55,12 +70,27 @@ with zipfile.ZipFile(jmod_path, "r") as jmod:
 '
 fi
 
-echo "[4/7] d8 dex (bundling ECJ + D8 + java.compiler API + apksigner into native dex)..."
+# Ensure apksig-clean.jar is generated without Conscrypt / desktop native classes
+if [ ! -f $PROJ/apksig-clean.jar ]; then
+  echo "[3.6/7] generating apksig-clean.jar..."
+  python3 -c '
+import zipfile, os
+src_jar = "'$SDK'/build-tools/34.0.0/lib/apksigner.jar"
+dst_jar = "'$PROJ'/apksig-clean.jar"
+with zipfile.ZipFile(src_jar) as src:
+    with zipfile.ZipFile(dst_jar, "w") as dst:
+        for item in src.infolist():
+            if item.filename.startswith("com/android/apksig/") and item.filename.endswith(".class"):
+                dst.writestr(item.filename, src.read(item.filename))
+'
+fi
+
+echo "[4/7] d8 dex (bundling ECJ + D8 + java.compiler API + apksig into native dex)..."
 $BT/d8 --lib $AJAR --min-api 24 --output $OUT/dex \
   $(find $OUT/obj -name "*.class") \
   $PROJ/ecj.jar \
   $PROJ/java-compiler-api.jar \
-  $SDK/build-tools/34.0.0/lib/apksigner.jar \
+  $PROJ/apksig-clean.jar \
   $SDK/build-tools/34.0.0/lib/d8.jar
 
 echo "[5/7] inject dex and native libs to apk..."
