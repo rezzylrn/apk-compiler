@@ -164,7 +164,7 @@ public class ApkBuilderEngine {
                 String ksPass = toolchain.getKeystorePassword();
                 File apksignerTool = toolchain.getFile("apksigner");
                 boolean signOk = ApkSignerUtil.signApk(alignedApk, finalApk, keystoreFile,
-                        ksPass, "androiddebugkey", ksPass, apksignerTool, listener::onLog);
+                        ksPass, "androiddebugkey", ksPass, project.getMinSdk(), apksignerTool, listener::onLog);
 
                 if (!signOk || !finalApk.exists()) {
                     throw new IOException("Penandatanganan APK gagal.");

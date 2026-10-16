@@ -24,6 +24,13 @@ public class ApkSignerUtil {
     public static boolean signApk(File inputApk, File outputApk, File keystoreFile,
                                   String ksPass, String keyAlias, String keyPass,
                                   File apksignerTool, LogCallback callback) {
+        return signApk(inputApk, outputApk, keystoreFile, ksPass, keyAlias, keyPass, 21, apksignerTool, callback);
+    }
+
+    public static boolean signApk(File inputApk, File outputApk, File keystoreFile,
+                                  String ksPass, String keyAlias, String keyPass,
+                                  int minSdk,
+                                  File apksignerTool, LogCallback callback) {
         try {
             // 1. In-process official Google apksig (Signature Scheme v1 + v2 + v3)
             Class<?> apkSignerClass = null;
@@ -51,7 +58,8 @@ public class ApkSignerUtil {
                     return false;
                 }
 
-                callback.log("[SIGN] Menandatangani APK via Google apksig (v1 + v2 + v3)...");
+                int effectiveMinSdk = minSdk > 0 ? minSdk : 21;
+                callback.log("[SIGN] Menandatangani APK via Google apksig (v1 + v2 + v3, minSdk=" + effectiveMinSdk + ")...");
                 com.android.apksig.ApkSigner.SignerConfig signerConfig =
                         new com.android.apksig.ApkSigner.SignerConfig.Builder(
                                 keyAlias,
@@ -62,6 +70,7 @@ public class ApkSignerUtil {
                 com.android.apksig.ApkSigner signer = new com.android.apksig.ApkSigner.Builder(Collections.singletonList(signerConfig))
                         .setInputApk(inputApk)
                         .setOutputApk(outputApk)
+                        .setMinSdkVersion(effectiveMinSdk)
                         .setV1SigningEnabled(true)
                         .setV2SigningEnabled(true)
                         .setV3SigningEnabled(true)
