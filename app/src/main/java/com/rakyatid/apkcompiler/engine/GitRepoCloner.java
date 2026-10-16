@@ -89,25 +89,25 @@ public class GitRepoCloner {
                 targetDir = new File(outputDir, repo);
                 String canonicalTarget = targetDir.getCanonicalPath();
                 if (!canonicalTarget.startsWith(canonicalOutput + File.separator)) {
-                    listener.onError("Percobaan path traversal pada target direktori terdeteksi!");
+                    listener.onError("Path traversal attempt on target directory detected!");
                     return;
                 }
 
-                listener.onProgress("Menghubungkan ke GitHub (" + owner + "/" + repo + "#" + branch + ")...", 5);
+                listener.onProgress("Connecting to GitHub (" + owner + "/" + repo + "#" + branch + ")...", 5);
 
                 String zipUrl = "https://github.com/" + owner + "/" + repo + "/archive/refs/heads/" + branch + ".zip";
                 HttpURLConnection conn = openConnectionWithRedirects(zipUrl);
 
                 if (conn.getResponseCode() == 404 && branch.equals("main")) {
                     // Fallback to master if main does not exist
-                    listener.onProgress("Branch 'main' tidak ditemukan, mencoba 'master'...", 10);
+                    listener.onProgress("Branch 'main' not found, trying 'master'...", 10);
                     zipUrl = "https://github.com/" + owner + "/" + repo + "/archive/refs/heads/master.zip";
                     conn = openConnectionWithRedirects(zipUrl);
                 }
 
                 int respCode = conn.getResponseCode();
                 if (respCode < 200 || respCode >= 300) {
-                    listener.onError("Gagal mengunduh repository dari GitHub (HTTP " + respCode + ")");
+                    listener.onError("Failed to download repository from GitHub (HTTP " + respCode + ")");
                     return;
                 }
 
@@ -116,7 +116,7 @@ public class GitRepoCloner {
                 }
                 targetDir.mkdirs();
 
-                listener.onProgress("Mengunduh arsip proyek...", 20);
+                listener.onProgress("Downloading project archive...", 20);
 
                 InputStream in = new BufferedInputStream(conn.getInputStream(), 16384);
                 ZipInputStream zis = new ZipInputStream(in);
@@ -130,7 +130,7 @@ public class GitRepoCloner {
                 while ((entry = zis.getNextEntry()) != null) {
                     entryCount++;
                     if (entryCount > MAX_ZIP_ENTRIES) {
-                        throw new SecurityException("Zip bomb terdeteksi: jumlah entry melebihi " + MAX_ZIP_ENTRIES);
+                        throw new SecurityException("Zip bomb detected: entry count exceeds limit (" + MAX_ZIP_ENTRIES + ")");
                     }
 
                     String name = entry.getName();
@@ -157,7 +157,7 @@ public class GitRepoCloner {
                     File destFile = new File(targetDir, relativePath);
                     String canonicalDest = destFile.getCanonicalPath();
                     if (!canonicalDest.startsWith(canonicalTarget + File.separator) && !canonicalDest.equals(canonicalTarget)) {
-                        throw new SecurityException("Zip Slip terdeteksi: " + name);
+                        throw new SecurityException("Zip Slip detected: " + name);
                     }
 
                     if (entry.isDirectory()) {
@@ -177,11 +177,11 @@ public class GitRepoCloner {
 
                             if (fileBytes > MAX_SINGLE_FILE_BYTES) {
                                 fos.close();
-                                throw new SecurityException("Ukuran satu file melebihi batas " + (MAX_SINGLE_FILE_BYTES / (1024 * 1024)) + " MB: " + name);
+                                throw new SecurityException("Single file size exceeds limit of " + (MAX_SINGLE_FILE_BYTES / (1024 * 1024)) + " MB: " + name);
                             }
                             if (totalBytes > MAX_TOTAL_UNCOMPRESSED_BYTES) {
                                 fos.close();
-                                throw new SecurityException("Zip bomb terdeteksi: total ekstraksi melebihi batas " + (MAX_TOTAL_UNCOMPRESSED_BYTES / (1024 * 1024)) + " MB");
+                                throw new SecurityException("Zip bomb detected: total uncompressed size exceeds limit (" + (MAX_TOTAL_UNCOMPRESSED_BYTES / (1024 * 1024)) + " MB)");
                             }
 
                             fos.write(buffer, 0, read);
@@ -191,7 +191,7 @@ public class GitRepoCloner {
                     }
 
                     if (entryCount % 15 == 0) {
-                        listener.onProgress("Mengekstrak file (" + entryCount + ")...", 30 + (entryCount % 50));
+                        listener.onProgress("Extracting files (" + entryCount + ")...", 30 + (entryCount % 50));
                     }
                     zis.closeEntry();
                 }
@@ -201,10 +201,10 @@ public class GitRepoCloner {
                 conn.disconnect();
 
                 // Post-extraction sandbox & symlink validation
-                listener.onProgress("Memverifikasi integritas file hasil ekstraksi...", 90);
+                listener.onProgress("Verifying file sandbox integrity...", 90);
                 SecurityAuditor.validateSandboxFiles(targetDir, targetDir, 0);
 
-                listener.onProgress("Selesai mengekstrak " + entryCount + " file secara aman.", 100);
+                listener.onProgress("Extracted " + entryCount + " files securely.", 100);
                 listener.onSuccess(targetDir);
 
             } catch (Throwable e) {
@@ -212,7 +212,7 @@ public class GitRepoCloner {
                 if (targetDir != null && targetDir.exists()) {
                     deleteRecursive(targetDir);
                 }
-                listener.onError("Error saat clone repository: " + e.getMessage());
+                listener.onError("Error cloning repository: " + e.getMessage());
             }
         }).start();
     }

@@ -10,23 +10,41 @@ package com.rakyatid.apkcompiler;
 public final class R {
   public static final class color {
     public static final int accent_cyan=0x7f010000;
+    /**
+     * Soft status accents
+     */
     public static final int accent_green=0x7f010001;
     public static final int accent_indigo=0x7f010002;
     public static final int accent_red=0x7f010003;
     public static final int accent_yellow=0x7f010004;
+    /**
+     * Calm, refined, eye-friendly modern dark palette (low contrast, no harsh neon)
+     */
     public static final int bg_main=0x7f010005;
+    /**
+     * Calm terminal console
+     */
     public static final int console_bg=0x7f010006;
     public static final int console_text=0x7f010007;
+    /**
+     * Calmed primary accents
+     */
     public static final int primary_accent=0x7f010008;
     public static final int primary_dark=0x7f010009;
     public static final int surface_border=0x7f01000a;
     public static final int surface_card=0x7f01000b;
     public static final int surface_elevated=0x7f01000c;
     public static final int text_muted=0x7f01000d;
+    /**
+     * Soft comfortable typography
+     */
     public static final int text_primary=0x7f01000e;
     public static final int text_secondary=0x7f01000f;
     public static final int tour_dot_active=0x7f010010;
     public static final int tour_dot_inactive=0x7f010011;
+    /**
+     * Onboarding tour colors
+     */
     public static final int tour_surface=0x7f010012;
   }
   public static final class drawable {

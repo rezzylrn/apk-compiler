@@ -49,7 +49,7 @@ public class ApkFileProvider extends ContentProvider {
 
         // 1. Path traversal & null byte sanitization
         if (path.contains("\0") || path.contains("..")) {
-            throw new SecurityException("Akses direktori ditolak: Path traversal atau karakter ilegal terdeteksi!");
+            throw new SecurityException("Directory access denied: Path traversal or illegal characters detected!");
         }
 
         File file = new File(path);
@@ -70,7 +70,7 @@ public class ApkFileProvider extends ContentProvider {
                                      canonicalTarget.startsWith(canonicalInt + File.separator);
 
             if (!isWithinAllowed) {
-                throw new SecurityException("Akses direktori ditolak: Berkas berada di luar folder 'outputs/'!");
+                throw new SecurityException("Directory access denied: Target file is outside 'outputs/' folder!");
             }
 
             // 3. Blacklist checks against private data files
@@ -79,33 +79,33 @@ public class ApkFileProvider extends ContentProvider {
                 lowerName.endsWith(".db") || lowerName.endsWith(".sqlite") ||
                 lowerName.endsWith(".xml") || lowerName.endsWith(".properties") ||
                 lowerName.contains("shared_prefs") || lowerName.contains("databases")) {
-                throw new SecurityException("Akses ditolak: File sensitif / internal tidak dapat diakses melalui FileProvider!");
+                throw new SecurityException("Access denied: Sensitive or internal files cannot be accessed via FileProvider!");
             }
 
             // 4. Strictly allow only .apk files
             if (!lowerName.endsWith(".apk")) {
-                throw new SecurityException("Akses ditolak: Hanya file berekstensi .apk yang diizinkan!");
+                throw new SecurityException("Access denied: Only .apk files are allowed!");
             }
 
             // 5. Verify existence and regular file status
             if (!file.exists()) {
-                throw new FileNotFoundException("File tidak ditemukan: " + file.getName());
+                throw new FileNotFoundException("File not found: " + file.getName());
             }
 
             if (!file.isFile()) {
-                throw new SecurityException("Akses ditolak: Target bukan file reguler!");
+                throw new SecurityException("Access denied: Target is not a regular file!");
             }
 
             return file;
         } catch (IOException e) {
-            throw new SecurityException("Gagal validasi canonical path: " + e.getMessage());
+            throw new SecurityException("Canonical path validation failed: " + e.getMessage());
         }
     }
 
     @Override
     public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
         if (!"r".equals(mode)) {
-            throw new SecurityException("Hanya mode read-only (r) yang diizinkan");
+            throw new SecurityException("Only read-only mode ('r') is supported");
         }
         File file = validateAndGetAllowedFile(getContext(), uri);
         return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);

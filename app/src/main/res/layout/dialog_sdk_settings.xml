@@ -161,7 +161,7 @@
             android:background="@drawable/btn_primary"
             android:text="Apply"
             android:textAllCaps="false"
-            android:textColor="#0B132B"
+            android:textColor="#FFFFFF"
             android:textSize="13sp"
             android:textStyle="bold" />
     </LinearLayout>

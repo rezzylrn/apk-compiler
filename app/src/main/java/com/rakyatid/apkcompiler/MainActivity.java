@@ -241,12 +241,12 @@ public class MainActivity extends Activity {
             Button btnDelete = itemView.findViewById(R.id.btn_item_delete);
 
             tvName.setText(p.getName());
-            tvPkg.setText(p.getPackageName() != null ? p.getPackageName() : "Bukan proyek Android standar");
+            tvPkg.setText(p.getPackageName() != null ? p.getPackageName() : "Non-standard Android project");
             tvStats.setText(p.getJavaFilesCount() + " java / " + p.getResFilesCount() + " res");
 
             btnSelect.setOnClickListener(v -> {
                 setActiveProject(p);
-                switchTab(1); // Langsung pindah ke tab kompilasi
+                switchTab(1);
             });
 
             btnDelete.setOnClickListener(v -> {
@@ -445,7 +445,7 @@ public class MainActivity extends Activity {
                 switchTab(1);
                 dialog.dismiss();
             } else {
-                Toast.makeText(MainActivity.this, "Folder bukan proyek Android yang valid (AndroidManifest.xml tidak ditemukan)", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Selected folder is not a valid Android project (AndroidManifest.xml not found)", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -467,7 +467,7 @@ public class MainActivity extends Activity {
             new AlertDialog.Builder(MainActivity.this)
                     .setTitle(title)
                     .setMessage(stackTrace)
-                    .setPositiveButton("Tutup", null)
+                    .setPositiveButton("Close", null)
                     .show();
         } catch (Throwable ignored) {}
     }
@@ -475,12 +475,12 @@ public class MainActivity extends Activity {
     private void startCompile() {
         try {
             if (activeProject == null) {
-                Toast.makeText(this, "Pilih proyek terlebih dahulu", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Please select a project first", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             if (!toolchainManager.isAllReady()) {
-                Toast.makeText(this, "Toolchain belum lengkap. Membuka tab Toolchain...", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Toolchain incomplete. Opening Toolchain tab...", Toast.LENGTH_SHORT).show();
                 switchTab(2);
                 return;
             }
@@ -489,7 +489,7 @@ public class MainActivity extends Activity {
             progressBuild.setVisibility(View.VISIBLE);
             progressBuild.setProgress(0);
             cardBuildOutput.setVisibility(View.GONE);
-            tvBuildStep.setText("Sedang mengompilasi...");
+            tvBuildStep.setText("Compiling...");
 
             builderEngine.buildProject(activeProject, new ApkBuilderEngine.BuildListener() {
                 @Override
@@ -512,13 +512,13 @@ public class MainActivity extends Activity {
                         lastBuiltApk = finalApk;
                         btnStartCompile.setEnabled(true);
                         progressBuild.setProgress(100);
-                        tvBuildStep.setText("Selesai dalam " + String.format("%.2f", durationMs / 1000.0) + " detik");
+                        tvBuildStep.setText("Completed in " + String.format("%.2f", durationMs / 1000.0) + "s");
 
                         cardBuildOutput.setVisibility(View.VISIBLE);
                         tvOutputSize.setText(String.format("%.2f MB", finalApk.length() / (1024.0 * 1024.0)));
                         tvOutputPath.setText(finalApk.getAbsolutePath());
 
-                        Toast.makeText(MainActivity.this, "Kompilasi Sukses!", Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, "Compilation Succeeded!", Toast.LENGTH_LONG).show();
                     });
                 }
 
@@ -527,13 +527,13 @@ public class MainActivity extends Activity {
                     mainHandler.post(() -> {
                         btnStartCompile.setEnabled(true);
                         progressBuild.setVisibility(View.GONE);
-                        tvBuildStep.setText("Gagal: " + error);
+                        tvBuildStep.setText("Failed: " + error);
                         Toast.makeText(MainActivity.this, error, Toast.LENGTH_LONG).show();
                     });
                 }
             });
         } catch (Throwable t) {
-            showCrashDialog("Error Memulai Kompilasi", t);
+            showCrashDialog("Error Starting Compilation", t);
         }
     }
 
@@ -546,7 +546,7 @@ public class MainActivity extends Activity {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
         } catch (Exception e) {
-            Toast.makeText(this, "Gagal membuka installer: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Failed to launch installer: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -557,9 +557,9 @@ public class MainActivity extends Activity {
             intent.setType("application/vnd.android.package-archive");
             intent.putExtra(Intent.EXTRA_STREAM, apkUri);
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(Intent.createChooser(intent, "Bagikan APK"));
+            startActivity(Intent.createChooser(intent, "Share APK"));
         } catch (Exception e) {
-            Toast.makeText(this, "Gagal membagikan file: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Failed to share APK: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -581,15 +581,15 @@ public class MainActivity extends Activity {
 
             tvName.setText(item.getName());
             tvDesc.setText(item.getDescription());
-            tvSize.setText("Ukuran: " + item.getFormattedSize());
+            tvSize.setText("Size: " + item.getFormattedSize());
             tvPath.setText(item.getTargetFile().getName());
 
             if (item.isInstalled()) {
-                tvBadge.setText("Siap");
+                tvBadge.setText("Ready");
                 tvBadge.setBackgroundResource(R.drawable.badge_ready);
                 tvBadge.setTextColor(getColor(R.color.accent_green));
             } else {
-                tvBadge.setText("Belum Terpasang");
+                tvBadge.setText("Not Installed");
                 tvBadge.setBackgroundResource(R.drawable.badge_missing);
                 tvBadge.setTextColor(getColor(R.color.accent_red));
             }
@@ -598,11 +598,11 @@ public class MainActivity extends Activity {
         }
 
         if (allReady) {
-            badgeToolchainHeader.setText("Toolchain Siap");
+            badgeToolchainHeader.setText("Toolchain Ready");
             badgeToolchainHeader.setBackgroundResource(R.drawable.badge_ready);
             badgeToolchainHeader.setTextColor(getColor(R.color.accent_green));
         } else {
-            badgeToolchainHeader.setText("Toolchain Belum Lengkap");
+            badgeToolchainHeader.setText("Toolchain Incomplete");
             badgeToolchainHeader.setBackgroundResource(R.drawable.badge_missing);
             badgeToolchainHeader.setTextColor(getColor(R.color.accent_red));
         }
@@ -613,7 +613,7 @@ public class MainActivity extends Activity {
         progressToolchain.setVisibility(View.VISIBLE);
         progressToolchain.setProgress(0);
         tvToolchainStatus.setVisibility(View.VISIBLE);
-        tvToolchainStatus.setText("Memulai unduhan dependensi...");
+        tvToolchainStatus.setText("Starting dependency download...");
 
         toolchainManager.installAll(new ToolchainManager.InstallListener() {
             @Override
@@ -637,9 +637,9 @@ public class MainActivity extends Activity {
                 mainHandler.post(() -> {
                     btnInstallToolchain.setEnabled(true);
                     progressToolchain.setVisibility(View.GONE);
-                    tvToolchainStatus.setText(allSuccess ? "Semua dependensi siap digunakan!" : "Beberapa komponen gagal diunduh");
+                    tvToolchainStatus.setText(allSuccess ? "All toolchain dependencies are ready!" : "Some components failed to install");
                     refreshToolchainUI();
-                    Toast.makeText(MainActivity.this, allSuccess ? "Toolchain Siap!" : "Pemasangan selesai sebagian", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, allSuccess ? "Toolchain Ready!" : "Installation partially complete", Toast.LENGTH_SHORT).show();
                 });
             }
         });
@@ -654,7 +654,7 @@ public class MainActivity extends Activity {
                 String targetCanon = dir.getCanonicalPath();
                 String rootCanon = activeProject.getRootDir().getCanonicalPath();
                 if (!targetCanon.startsWith(rootCanon + File.separator) && !targetCanon.equals(rootCanon)) {
-                    Toast.makeText(this, "Navigasi di luar direktori proyek diblokir demi keamanan!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Navigation outside project directory is blocked for security!", Toast.LENGTH_SHORT).show();
                     dir = activeProject.getRootDir();
                 }
             } catch (Exception e) {
@@ -679,7 +679,7 @@ public class MainActivity extends Activity {
             if (f.isDirectory()) {
                 tvType.setText("[DIR]");
                 tvType.setTextColor(getColor(R.color.primary_accent));
-                tvSize.setText((f.listFiles() != null ? f.listFiles().length : 0) + " item");
+                tvSize.setText((f.listFiles() != null ? f.listFiles().length : 0) + " items");
                 row.setOnClickListener(v -> loadExplorerDirectory(f));
             } else {
                 tvType.setText("[FILE]");
@@ -699,7 +699,7 @@ public class MainActivity extends Activity {
                 String fCanon = f.getCanonicalPath();
                 String rootCanon = activeProject.getRootDir().getCanonicalPath();
                 if (!fCanon.startsWith(rootCanon + File.separator)) {
-                    Toast.makeText(this, "Akses file di luar direktori proyek diblokir demi keamanan!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "File access outside project directory is blocked for security!", Toast.LENGTH_SHORT).show();
                     return;
                 }
             } catch (Exception e) {
@@ -713,12 +713,12 @@ public class MainActivity extends Activity {
                          name.endsWith(".md") || name.endsWith(".cfg") || name.endsWith(".sh");
 
         if (!isText) {
-            Toast.makeText(this, "File biner tidak dapat diedit langsung", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Binary file cannot be opened in text editor", Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (f.length() > 512 * 1024) {
-            Toast.makeText(this, "File terlalu besar untuk editor in-app (>512 KB)", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "File too large for in-app editor (>512 KB)", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -729,7 +729,7 @@ public class MainActivity extends Activity {
                 content.append(line).append("\n");
             }
         } catch (Exception e) {
-            Toast.makeText(this, "Gagal membaca file: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Failed to read file: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -755,13 +755,13 @@ public class MainActivity extends Activity {
             try (java.io.FileOutputStream fos = new java.io.FileOutputStream(f)) {
                 fos.write(etCode.getText().toString().getBytes("UTF-8"));
                 fos.flush();
-                Toast.makeText(this, "Perubahan berhasil disimpan!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Changes saved successfully!", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
                 if (currentExplorerDir != null) {
                     loadExplorerDirectory(currentExplorerDir);
                 }
             } catch (Exception e) {
-                Toast.makeText(this, "Gagal menyimpan: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Failed to save file: " + e.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
 
@@ -944,11 +944,11 @@ public class MainActivity extends Activity {
         builder.setTitle("APK Compiler");
         builder.setIcon(R.drawable.ic_app_logo);
         builder.setMessage("On-Device APK Compiler & Git Cloner\n\n"
-                + "Versi: 1.0.0\n"
+                + "Version: 1.2.1\n"
                 + "Target SDK: 34 (Android 14)\n"
-                + "Engine: AAPT2 + ECJ + D8 + Apksigner\n\n"
-                + "Aplikasi kompilasi native on-device Android tanpa Gradle / PC.");
-        builder.setPositiveButton("Tutup", (d, w) -> d.dismiss());
+                + "Engine: AAPT2 + ECJ + D8 + apksig\n\n"
+                + "Professional native on-device Android compilation without Gradle or PC.");
+        builder.setPositiveButton("Close", (d, w) -> d.dismiss());
         builder.setNeutralButton("Tour Guide", (d, w) -> {
             d.dismiss();
             showTourGuideDialog();

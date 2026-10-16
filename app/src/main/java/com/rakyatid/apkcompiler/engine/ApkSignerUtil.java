@@ -54,12 +54,12 @@ public class ApkSignerUtil {
                 PrivateKey privateKey = (PrivateKey) ks.getKey(keyAlias, keyPass.toCharArray());
                 Certificate cert = ks.getCertificate(keyAlias);
                 if (privateKey == null || !(cert instanceof X509Certificate)) {
-                    callback.log("[SIGN ERROR] Gagal memuat kunci privat / sertifikat X509.");
+                    callback.log("[SIGN ERROR] Failed to load private key or X.509 certificate.");
                     return false;
                 }
 
                 int effectiveMinSdk = minSdk > 0 ? minSdk : 21;
-                callback.log("[SIGN] Menandatangani APK via Google apksig (v1 + v2 + v3, minSdk=" + effectiveMinSdk + ")...");
+                callback.log("[SIGN] Signing APK via Google apksig (v1 + v2 + v3, minSdk=" + effectiveMinSdk + ")...");
                 com.android.apksig.ApkSigner.SignerConfig signerConfig =
                         new com.android.apksig.ApkSigner.SignerConfig.Builder(
                                 keyAlias,
@@ -79,7 +79,7 @@ public class ApkSignerUtil {
                 signer.sign();
 
                 if (outputApk.exists() && outputApk.length() > 0) {
-                    callback.log("[SIGN] Penandatanganan resmi apksig selesai (v1 + v2 + v3 sukses).");
+                    callback.log("[SIGN] Official apksig signing succeeded (v1 + v2 + v3 verified).");
                     return true;
                 }
             }
@@ -248,7 +248,7 @@ public class ApkSignerUtil {
             zos.close();
             zipFile.close();
 
-            callback.log("[SIGN] Penandatanganan APK v1 berhasil.");
+            callback.log("[SIGN] APK v1 signing succeeded.");
             return true;
 
         } catch (Exception e) {
@@ -259,7 +259,7 @@ public class ApkSignerUtil {
 
     private static KeyStore loadKeyStore(File file, String password) throws Exception {
         if (file == null || !file.exists()) {
-            throw new FileNotFoundException("File keystore tidak ditemukan di " + (file != null ? file.getAbsolutePath() : "null"));
+            throw new FileNotFoundException("Keystore file not found at " + (file != null ? file.getAbsolutePath() : "null"));
         }
         KeyStore ks;
         String[] passwords = new String[]{password, "android"};
@@ -289,7 +289,7 @@ public class ApkSignerUtil {
                 lastEx = e;
             }
         }
-        throw new Exception("Gagal memuat keystore: " + (lastEx != null ? lastEx.getMessage() : "format tidak didukung"));
+        throw new Exception("Failed to load keystore: " + (lastEx != null ? lastEx.getMessage() : "unsupported format"));
     }
 
     private static byte[] buildPkcs7Block(byte[] certDer, byte[] signature) throws IOException {

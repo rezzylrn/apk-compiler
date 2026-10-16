@@ -30,30 +30,30 @@ public class SecurityAuditor {
     // High-risk Android permissions commonly abused by spyware/malware
     public static final Map<String, String> DANGEROUS_PERMISSIONS = new LinkedHashMap<>();
     static {
-        DANGEROUS_PERMISSIONS.put("android.permission.SEND_SMS", "Mengirim SMS secara diam-diam (potensi toll fraud / malware perbankan)");
-        DANGEROUS_PERMISSIONS.put("android.permission.RECEIVE_SMS", "Mencegat SMS masuk (potensi pencurian OTP / 2FA)");
-        DANGEROUS_PERMISSIONS.put("android.permission.READ_SMS", "Membaca pesan SMS pengguna (pencurian data pribadi)");
-        DANGEROUS_PERMISSIONS.put("android.permission.RECEIVE_MMS", "Menerima pesan MMS (potensi eksploitasi Stagefright/parser)");
-        DANGEROUS_PERMISSIONS.put("android.permission.RECORD_AUDIO", "Merekam mikrofon tanpa izin (potensi spyware/penyadapan suara)");
-        DANGEROUS_PERMISSIONS.put("android.permission.CAMERA", "Mengambil foto/video secara diam-diam (potensi spyware)");
-        DANGEROUS_PERMISSIONS.put("android.permission.ACCESS_FINE_LOCATION", "Melacak lokasi presisi GPS pengguna (pelanggaran privasi)");
-        DANGEROUS_PERMISSIONS.put("android.permission.ACCESS_COARSE_LOCATION", "Melacak perkiraan lokasi pengguna");
-        DANGEROUS_PERMISSIONS.put("android.permission.ACCESS_BACKGROUND_LOCATION", "Melacak lokasi di latar belakang terus menerus");
-        DANGEROUS_PERMISSIONS.put("android.permission.READ_CONTACTS", "Membaca daftar kontak pengguna (pencurian data pribadi)");
-        DANGEROUS_PERMISSIONS.put("android.permission.WRITE_CONTACTS", "Memodifikasi daftar kontak");
-        DANGEROUS_PERMISSIONS.put("android.permission.READ_CALL_LOG", "Membaca riwayat panggilan telepon");
-        DANGEROUS_PERMISSIONS.put("android.permission.WRITE_CALL_LOG", "Memodifikasi riwayat panggilan telepon");
-        DANGEROUS_PERMISSIONS.put("android.permission.PROCESS_OUTGOING_CALLS", "Mencegat panggilan keluar");
-        DANGEROUS_PERMISSIONS.put("android.permission.CALL_PHONE", "Melakukan panggilan telepon otomatis");
-        DANGEROUS_PERMISSIONS.put("android.permission.SYSTEM_ALERT_WINDOW", "Menampilkan overlay mengambang di atas aplikasi lain (potensi tapjacking/phishing)");
-        DANGEROUS_PERMISSIONS.put("android.permission.RECEIVE_BOOT_COMPLETED", "Menjalankan service otomatis saat perangkat menyala (potensi spyware persistent)");
-        DANGEROUS_PERMISSIONS.put("android.permission.BIND_ACCESSIBILITY_SERVICE", "Layanan Aksesibilitas (sering disalahgunakan trojan perbankan untuk mengontrol layar)");
-        DANGEROUS_PERMISSIONS.put("android.permission.BIND_DEVICE_ADMIN", "Izin Device Administrator (potensi ransomware / penguncian perangkat)");
-        DANGEROUS_PERMISSIONS.put("android.permission.REQUEST_INSTALL_PACKAGES", "Meminta instalasi paket aplikasi tambahan (potensi dropper malware)");
-        DANGEROUS_PERMISSIONS.put("android.permission.INSTALL_PACKAGES", "Menginstal paket secara otomatis");
-        DANGEROUS_PERMISSIONS.put("android.permission.PACKAGE_USAGE_STATS", "Memantau aktivitas aplikasi yang dibuka pengguna");
-        DANGEROUS_PERMISSIONS.put("android.permission.QUERY_ALL_PACKAGES", "Menginventarisasi seluruh aplikasi yang terpasang di perangkat");
-        DANGEROUS_PERMISSIONS.put("android.permission.WRITE_SETTINGS", "Mengubah pengaturan sistem global");
+        DANGEROUS_PERMISSIONS.put("android.permission.SEND_SMS", "Sending covert SMS messages (toll fraud / banking trojans)");
+        DANGEROUS_PERMISSIONS.put("android.permission.RECEIVE_SMS", "Intercepting incoming SMS messages (OTP / 2FA theft)");
+        DANGEROUS_PERMISSIONS.put("android.permission.READ_SMS", "Reading user SMS messages (privacy data theft)");
+        DANGEROUS_PERMISSIONS.put("android.permission.RECEIVE_MMS", "Receiving MMS messages (Stagefright / parser exploits)");
+        DANGEROUS_PERMISSIONS.put("android.permission.RECORD_AUDIO", "Covert audio recording (microphone eavesdropping)");
+        DANGEROUS_PERMISSIONS.put("android.permission.CAMERA", "Covert photo/video capture (surveillance spyware)");
+        DANGEROUS_PERMISSIONS.put("android.permission.ACCESS_FINE_LOCATION", "Tracking precise GPS location (privacy violation)");
+        DANGEROUS_PERMISSIONS.put("android.permission.ACCESS_COARSE_LOCATION", "Tracking approximate user location");
+        DANGEROUS_PERMISSIONS.put("android.permission.ACCESS_BACKGROUND_LOCATION", "Continuous background location tracking");
+        DANGEROUS_PERMISSIONS.put("android.permission.READ_CONTACTS", "Reading user contact list (personal data theft)");
+        DANGEROUS_PERMISSIONS.put("android.permission.WRITE_CONTACTS", "Modifying user contacts");
+        DANGEROUS_PERMISSIONS.put("android.permission.READ_CALL_LOG", "Reading phone call history");
+        DANGEROUS_PERMISSIONS.put("android.permission.WRITE_CALL_LOG", "Modifying phone call history");
+        DANGEROUS_PERMISSIONS.put("android.permission.PROCESS_OUTGOING_CALLS", "Intercepting outgoing phone calls");
+        DANGEROUS_PERMISSIONS.put("android.permission.CALL_PHONE", "Initiating automatic phone calls");
+        DANGEROUS_PERMISSIONS.put("android.permission.SYSTEM_ALERT_WINDOW", "Displaying floating overlays over other apps (tapjacking/phishing risk)");
+        DANGEROUS_PERMISSIONS.put("android.permission.RECEIVE_BOOT_COMPLETED", "Persistent auto-start service on boot (stealth persistence)");
+        DANGEROUS_PERMISSIONS.put("android.permission.BIND_ACCESSIBILITY_SERVICE", "Accessibility Service hijacking (screen control / keylogging)");
+        DANGEROUS_PERMISSIONS.put("android.permission.BIND_DEVICE_ADMIN", "Device Administrator privileges (potential ransomware lock)");
+        DANGEROUS_PERMISSIONS.put("android.permission.REQUEST_INSTALL_PACKAGES", "Requesting additional package installations (dropper malware)");
+        DANGEROUS_PERMISSIONS.put("android.permission.INSTALL_PACKAGES", "Silent package installation");
+        DANGEROUS_PERMISSIONS.put("android.permission.PACKAGE_USAGE_STATS", "Monitoring user app usage activity");
+        DANGEROUS_PERMISSIONS.put("android.permission.QUERY_ALL_PACKAGES", "Enumerating all installed packages on the device");
+        DANGEROUS_PERMISSIONS.put("android.permission.WRITE_SETTINGS", "Modifying global system settings");
     }
 
     public static class AuditResult {
@@ -82,12 +82,12 @@ public class SecurityAuditor {
 
         public void addDangerousPermission(String perm, String description) {
             this.dangerousPermissions.add(perm + ": " + description);
-            addWarning("Permisi Berbahaya Terdeteksi: " + perm + " -> " + description);
+            addWarning("Dangerous Permission Detected: " + perm + " -> " + description);
         }
 
         public void addSuspiciousComponent(String component) {
             this.suspiciousComponents.add(component);
-            addWarning("Komponen Mencurigakan Terdeteksi: " + component);
+            addWarning("Suspicious Component Detected: " + component);
         }
 
         public List<String> getDangerousPermissions() {
@@ -116,7 +116,7 @@ public class SecurityAuditor {
     public static AuditResult auditProject(Project project, LogCallback logger) {
         AuditResult result = new AuditResult();
         if (project == null || project.getRootDir() == null || !project.getRootDir().exists()) {
-            result.addViolation("Direktori proyek tidak valid atau tidak ditemukan.");
+            result.addViolation("Project directory is invalid or not found.");
             return result;
         }
 
@@ -124,15 +124,15 @@ public class SecurityAuditor {
 
         // 1. Sandbox Validation: check all files in project for symlinks pointing outside
         try {
-            logger.log("[SECURITY AUDIT] 1/3 Memeriksa integritas sandbox direktori & symlinks...");
+            logger.log("[SECURITY AUDIT] 1/3 Verifying project directory sandbox & symlink integrity...");
             validateSandboxFiles(rootDir, rootDir, 0);
-            logger.log("[SECURITY AUDIT] Sandbox aman: tidak ada symlink yang keluar dari direktori proyek.");
+            logger.log("[SECURITY AUDIT] Sandbox verified: no escaping symlinks detected.");
         } catch (SecurityException se) {
             result.addViolation(se.getMessage());
             logger.log("[SECURITY ALERT] " + se.getMessage());
             return result;
         } catch (Exception e) {
-            result.addViolation("Gagal memvalidasi sandbox file: " + e.getMessage());
+            result.addViolation("Failed to validate file sandbox: " + e.getMessage());
             return result;
         }
 
@@ -140,23 +140,23 @@ public class SecurityAuditor {
         String pkg = project.getPackageName();
         if (pkg != null) {
             if (!isValidPackageName(pkg)) {
-                result.addViolation("Format package name tidak aman atau tidak valid: '" + pkg + "'");
+                result.addViolation("Package name format is invalid or unsafe: '" + pkg + "'");
             } else if (isSystemPackageSpoof(pkg)) {
-                result.addViolation("Package name mencoba meniru identitas sistem Android/Google: '" + pkg + "'");
+                result.addViolation("Package name attempts to spoof Android/Google system identity: '" + pkg + "'");
             }
         }
 
         // 3. AndroidManifest Security Audit
         File manifest = project.getManifestFile();
         if (manifest != null && manifest.exists()) {
-            logger.log("[SECURITY AUDIT] 2/3 Memeriksa AndroidManifest.xml untuk deteksi potensi malware...");
+            logger.log("[SECURITY AUDIT] 2/3 Scanning AndroidManifest.xml for potential security risks...");
             auditManifest(manifest, result, logger);
         } else {
-            logger.log("[SECURITY AUDIT] Manifest tidak ditemukan pada tahap audit.");
+            logger.log("[SECURITY AUDIT] No manifest found during security audit stage.");
         }
 
-        logger.log("[SECURITY AUDIT] 3/3 Audit selesai. Total peringatan: " + result.getWarnings().size() +
-                ", Pelanggaran fatal: " + result.getViolations().size());
+        logger.log("[SECURITY AUDIT] 3/3 Audit complete. Warnings: " + result.getWarnings().size() +
+                ", Critical violations: " + result.getViolations().size());
 
         return result;
     }
@@ -167,7 +167,7 @@ public class SecurityAuditor {
      */
     public static void validateSandboxFiles(File currentDir, File rootDir, int depth) throws IOException {
         if (depth > 25) {
-            throw new SecurityException("Struktur direktori terlalu dalam atau terdapat circular symlink!");
+            throw new SecurityException("Directory hierarchy exceeds maximum depth (potential circular symlink)!");
         }
 
         String canonicalRoot = rootDir.getCanonicalPath();
@@ -177,8 +177,8 @@ public class SecurityAuditor {
         for (File f : files) {
             String canonicalFile = f.getCanonicalPath();
             if (!canonicalFile.startsWith(canonicalRoot + File.separator) && !canonicalFile.equals(canonicalRoot)) {
-                throw new SecurityException("Pelanggaran Sandbox: File '" + f.getName() +
-                        "' merujuk ke luar direktori proyek (" + canonicalFile + ")");
+                throw new SecurityException("Sandbox Violation: File '" + f.getName() +
+                        "' resolves outside project directory (" + canonicalFile + ")");
             }
 
             if (f.isDirectory()) {

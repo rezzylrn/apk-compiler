@@ -130,7 +130,7 @@
             android:paddingRight="18dp"
             android:text="Use This Folder"
             android:textAllCaps="false"
-            android:textColor="#0B132B"
+            android:textColor="#FFFFFF"
             android:textSize="12sp"
             android:textStyle="bold" />
     </LinearLayout>

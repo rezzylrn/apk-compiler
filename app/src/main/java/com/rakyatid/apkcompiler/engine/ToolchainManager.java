@@ -61,7 +61,7 @@ public class ToolchainManager {
         items.add(new ToolchainItem(
                 "aapt2",
                 "AAPT2 Resource Compiler",
-                "Android Asset Packaging Tool v2 untuk mengompilasi resource layout & link AndroidManifest.xml",
+                "Android Asset Packaging Tool v2 for compiling XML layouts and linking AndroidManifest.xml",
                 aapt2File,
                 "prebundled_or_download",
                 "be2cea61814678f7a9e61bf818a6666e6097a7d67d6c19498a4d7aa690bc4151"
@@ -72,7 +72,7 @@ public class ToolchainManager {
         items.add(new ToolchainItem(
                 "ecj",
                 "Java Compiler (ECJ)",
-                "Eclipse Compiler for Java untuk mengompilasi kode sumber Java ke bytecode (.class)",
+                "Eclipse Compiler for Java for compiling Java source files into bytecode (.class)",
                 ecjFile,
                 "https://repo1.maven.org/maven2/org/eclipse/jdt/ecj/3.26.0/ecj-3.26.0.jar",
                 "ac0ba5876eaf7ebb47749a0d1be179c51f194b9dd0b875d1c09e1b530f5a2db5"
@@ -83,7 +83,7 @@ public class ToolchainManager {
         items.add(new ToolchainItem(
                 "d8",
                 "D8 Dex Compiler",
-                "Android D8 compiler untuk mengonversi file .class menjadi Dalvik Executable (classes.dex)",
+                "Android D8 compiler for converting .class files into Dalvik Executable (classes.dex)",
                 d8File,
                 "https://dl.google.com/dl/android/maven2/com/android/tools/r8/8.2.33/r8-8.2.33.jar",
                 "80c39a28bb66b64efc232d68ae554d59fe3838808738b4fe584884691cb1e5a3"
@@ -97,7 +97,7 @@ public class ToolchainManager {
         items.add(new ToolchainItem(
                 "android_jar",
                 "Android SDK Platform (" + selectedPlatformSdk + ")",
-                "Stubs API Android Platform untuk resolusi library dan framework Android",
+                "Android Platform API stubs for resolving framework classes and system resources",
                 androidJarFile != null ? androidJarFile : new File(toolchainDir, "android.jar"),
                 dlUrl,
                 sha256
@@ -108,7 +108,7 @@ public class ToolchainManager {
         items.add(new ToolchainItem(
                 "keystore",
                 "Android Debug Keystore",
-                "Kunci kriptografi RSA 2048-bit untuk menandatangani paket APK hasil build",
+                "RSA 2048-bit cryptographic key used for signing debug APK packages",
                 keystoreFile,
                 "local_generate",
                 null
@@ -119,7 +119,7 @@ public class ToolchainManager {
         items.add(new ToolchainItem(
                 "androidx",
                 "AndroidX / AppCompat Essentials",
-                "Paket pustaka inti AndroidX (AppCompat, Core, Fragment, Lifecycle, Resources) untuk proyek modern",
+                "Essential AndroidX core libraries (AppCompat, Core, Fragment, Lifecycle, Resources) for modern apps",
                 androidxDir,
                 "local_asset_or_download",
                 null
@@ -315,29 +315,29 @@ public class ToolchainManager {
             for (ToolchainItem item : items) {
                 item.updateStatus();
                 if (item.isInstalled()) {
-                    listener.onComponentInstalled(item.getName(), true, "Sudah terpasang");
+                    listener.onComponentInstalled(item.getName(), true, "Already installed");
                     continue;
                 }
 
                 if ("keystore".equals(item.getId())) {
-                    listener.onProgress(item.getName(), 50, "Membuat kunci RSA 2048 debug...");
+                    listener.onProgress(item.getName(), 50, "Generating RSA 2048-bit debug key...");
                     boolean ok = generateKeystoreLocally(item.getTargetFile());
                     item.updateStatus();
-                    listener.onComponentInstalled(item.getName(), ok, ok ? "Berhasil dibuat" : "Gagal generate keystore");
+                    listener.onComponentInstalled(item.getName(), ok, ok ? "Created successfully" : "Failed to generate keystore");
                     if (!ok) overallSuccess = false;
                     continue;
                 }
 
                 if ("androidx".equals(item.getId())) {
-                    listener.onProgress(item.getName(), 30, "Mengekstrak paket pustaka AndroidX Essentials...");
+                    listener.onProgress(item.getName(), 30, "Extracting AndroidX Essentials library pack...");
                     boolean ok = DependencyManager.ensureEssentialsReady(toolchainDir, context, null);
                     item.updateStatus();
-                    listener.onComponentInstalled(item.getName(), ok, ok ? "Berhasil dipasang" : "Gagal memasang paket AndroidX");
+                    listener.onComponentInstalled(item.getName(), ok, ok ? "Installed successfully" : "Failed to install AndroidX pack");
                     if (!ok) overallSuccess = false;
                     continue;
                 }
 
-                listener.onProgress(item.getName(), 10, "Mengunduh dari repositori...");
+                listener.onProgress(item.getName(), 10, "Downloading from repository...");
                 boolean ok = downloadFile(item.getDownloadUrl(), item.getTargetFile(), item.getExpectedSha256(), (percent, status) -> {
                     listener.onProgress(item.getName(), percent, status);
                 });
@@ -347,7 +347,7 @@ public class ToolchainManager {
                 }
 
                 item.updateStatus();
-                listener.onComponentInstalled(item.getName(), ok, ok ? "Pemasangan & verifikasi checksum sukses" : "Gagal mengunduh / checksum tidak cocok");
+                listener.onComponentInstalled(item.getName(), ok, ok ? "Installation & checksum verification successful" : "Download failed or checksum mismatch");
                 if (!ok) overallSuccess = false;
             }
             listener.onComplete(overallSuccess);

@@ -37,7 +37,7 @@ public class ApkBuilderEngine {
 
     public void buildProject(Project project, BuildListener listener) {
         if (isBuilding) {
-            listener.onError("Proses kompilasi sedang berjalan.");
+            listener.onError("Compilation process is already running.");
             return;
         }
 
@@ -45,8 +45,8 @@ public class ApkBuilderEngine {
         new Thread(() -> {
             long startTime = System.currentTimeMillis();
             try {
-                listener.onProgress(1, 6, "[1/6] Menyiapkan direktori build...");
-                listener.onLog("=== MEMULAI KOMPILASI PROYEK: " + project.getName() + " ===");
+                listener.onProgress(1, 6, "[1/6] Preparing build environment...");
+                listener.onLog("=== STARTING BUILD FOR: " + project.getName() + " ===");
                 listener.onLog("[INFO] Package: " + project.getPackageName());
 
                 // Auto-bump targetSdk < 24 for Android 14+ install compatibility
@@ -67,10 +67,10 @@ public class ApkBuilderEngine {
                 listener.onLog("[INFO] Min SDK: " + project.getMinSdk() + ", Target SDK: " + project.getTargetSdk() + ", Compile SDK: " + project.getCompileSdk());
 
                 // Audit Keamanan Proyek & Sandboxing
-                listener.onLog("[SECURITY] Menjalankan audit keamanan proyek...");
+                listener.onLog("[SECURITY] Running pre-build security audit...");
                 SecurityAuditor.AuditResult auditResult = SecurityAuditor.auditProject(project, listener::onLog);
                 if (!auditResult.isSafe()) {
-                    StringBuilder sb = new StringBuilder("Kompilasi dibatalkan demi keamanan:\n");
+                    StringBuilder sb = new StringBuilder("Build cancelled due to security policy violations:\n");
                     for (String v : auditResult.getViolations()) {
                         sb.append(" - ").append(v).append("\n");
                     }
@@ -114,7 +114,7 @@ public class ApkBuilderEngine {
                     }
                 }
                 if (androidJar != null && androidJar.exists()) {
-                    listener.onLog("[SDK] Menggunakan Platform SDK: " + androidJar.getName() + " (" + androidJar.getAbsolutePath() + ")");
+                    listener.onLog("[SDK] Using Platform SDK: " + androidJar.getName() + " (" + androidJar.getAbsolutePath() + ")");
                 }
 
                 File aapt2Binary = toolchain.getFile("aapt2");
@@ -126,8 +126,8 @@ public class ApkBuilderEngine {
                 }
 
                 // STEP 1.5: Resolusi Dependensi & AAR Libraries
-                listener.onProgress(2, 6, "[2/6] Memeriksa dan Menyelesaikan Dependensi...");
-                listener.onLog("[2/6] Menyelesaikan dependensi & pustaka AAR/JAR...");
+                listener.onProgress(2, 6, "[2/6] Resolving Dependencies & Libraries...");
+                listener.onLog("[2/6] Resolving dependencies & AAR/JAR libraries...");
                 List<Dependency> projectDeps = project.getDependencies();
                 if (projectDeps == null || projectDeps.isEmpty()) {
                     projectDeps = DependencyManager.detectProjectDependencies(project, listener::onLog);
@@ -139,8 +139,8 @@ public class ApkBuilderEngine {
                 );
 
                 // STEP 2: AAPT2 / Resource & Manifest
-                listener.onProgress(3, 6, "[3/6] Memproses Resource dan Manifest...");
-                listener.onLog("[3/6] Memproses Resource & Manifest...");
+                listener.onProgress(3, 6, "[3/6] Processing Resources and Manifest...");
+                listener.onLog("[3/6] Processing Resources & Manifest...");
 
                 File unsignedApk = new File(buildDir, "unsigned.apk");
 
@@ -154,17 +154,17 @@ public class ApkBuilderEngine {
 
                 if (!aapt2Success) {
                     if (aapt2Binary == null || !aapt2Binary.exists()) {
-                        throw new IOException("AAPT2 binary tidak ditemukan (" + (aapt2Binary != null ? aapt2Binary.getAbsolutePath() : "null") + "). Pastikan Toolchain telah terpasang.");
+                        throw new IOException("AAPT2 binary not found (" + (aapt2Binary != null ? aapt2Binary.getAbsolutePath() : "null") + "). Ensure the toolchain is installed.");
                     } else if (androidJar == null || !androidJar.exists()) {
-                        throw new IOException("android.jar tidak ditemukan. Unduh platform SDK di tab Toolchain.");
+                        throw new IOException("android.jar not found. Download the platform SDK in the Toolchain tab.");
                     } else {
-                        throw new IOException("AAPT2 link gagal memproses resource/manifest. Periksa log kesalahan.");
+                        throw new IOException("AAPT2 link failed to process resources or manifest. Check the error log above.");
                     }
                 }
 
                 // STEP 3: Kompilasi Java (.java -> .class)
-                listener.onProgress(4, 6, "[4/6] Mengompilasi Kode Java...");
-                listener.onLog("[4/6] Mengompilasi kode Java...");
+                listener.onProgress(4, 6, "[4/6] Compiling Java Sources...");
+                listener.onLog("[4/6] Compiling Java source files...");
 
                 List<File> javaFiles = new ArrayList<>();
                 if (project.getJavaSrcDir() != null) {
@@ -173,38 +173,38 @@ public class ApkBuilderEngine {
                 javaFiles.addAll(ProjectScanner.listSourceFiles(genDir, ".java"));
 
                 if (javaFiles.isEmpty()) {
-                    throw new IOException("Tidak ada file kode sumber .java yang ditemukan.");
+                    throw new IOException("No .java source files found in the project.");
                 }
 
-                listener.onLog("[INFO] Ditemukan " + javaFiles.size() + " file sumber Java (termasuk kelas R).");
+                listener.onLog("[INFO] Found " + javaFiles.size() + " Java source files (including generated R classes).");
                 boolean javaSuccess = compileJavaSources(project, javaFiles, objDir, androidJar, depResult, listener);
                 if (!javaSuccess) {
-                    throw new IOException("Kompilasi Java gagal. Periksa error sintaks pada log.");
+                    throw new IOException("Java compilation failed. Check syntax errors in the log.");
                 }
 
                 // STEP 4: DEX Compilation (.class -> classes.dex)
-                listener.onProgress(5, 6, "[5/6] Mengonversi ke Dalvik Executable (classes.dex)...");
-                listener.onLog("[5/6] Mengonversi bytecode ke classes.dex via D8...");
+                listener.onProgress(5, 6, "[5/6] Converting Bytecode to DEX (classes.dex)...");
+                listener.onLog("[5/6] Converting bytecode to classes.dex via D8...");
 
                 List<File> classFiles = ProjectScanner.listSourceFiles(objDir, ".class");
                 if (classFiles.isEmpty()) {
-                    throw new IOException("File .class tidak ditemukan setelah kompilasi Java.");
+                    throw new IOException("No compiled .class files found after Java compilation.");
                 }
 
                 boolean dexSuccess = compileDex(project, classFiles, dexDir, androidJar, depResult, listener);
                 if (!dexSuccess) {
-                    throw new IOException("Kompilasi D8/Dex gagal.");
+                    throw new IOException("D8/Dex compilation failed.");
                 }
 
                 File classesDex = new File(dexDir, "classes.dex");
                 if (!classesDex.exists() || classesDex.length() == 0) {
-                    throw new IOException("classes.dex tidak terbuat.");
+                    throw new IOException("classes.dex was not generated.");
                 }
-                listener.onLog("[SUCCESS] classes.dex berhasil dibuat (" + (classesDex.length() / 1024) + " KB).");
+                listener.onLog("[SUCCESS] classes.dex generated successfully (" + (classesDex.length() / 1024) + " KB).");
 
                 // STEP 5: Package APK (Gabungkan dex + res + assets)
-                listener.onProgress(6, 6, "[6/6] Merakit dan Menandatangani Paket APK...");
-                listener.onLog("[6/6] Merakit paket APK...");
+                listener.onProgress(6, 6, "[6/6] Packaging and Signing APK...");
+                listener.onLog("[6/6] Packaging and aligning APK...");
 
                 File unalignedApk = new File(buildDir, "app-unaligned.apk");
                 packageApk(unsignedApk, dexDir, unalignedApk, project, listener);
@@ -213,7 +213,7 @@ public class ApkBuilderEngine {
                 ZipAlignUtil.alignZip(unalignedApk, alignedApk);
 
                 // Sign APK
-                listener.onLog("[SIGN] Menandatangani APK dengan keystore debug...");
+                listener.onLog("[SIGN] Signing APK with debug keystore...");
 
                 File outputDir = (context != null && context.getExternalFilesDir(null) != null) ?
                         new File(context.getExternalFilesDir(null), "outputs") :
@@ -247,13 +247,13 @@ public class ApkBuilderEngine {
                         ksPass, "androiddebugkey", ksPass, project.getMinSdk(), apksignerTool, listener::onLog);
 
                 if (!signOk || !finalApk.exists()) {
-                    throw new IOException("Penandatanganan APK gagal.");
+                    throw new IOException("APK signing failed.");
                 }
 
                 long duration = System.currentTimeMillis() - startTime;
-                listener.onLog("=== KOMPILASI SELESAI SUKSES (" + String.format("%.2f", duration / 1000.0) + " detik) ===");
-                listener.onLog("[OUTPUT] Lokasi APK: " + finalApk.getAbsolutePath());
-                listener.onLog("[OUTPUT] Ukuran: " + String.format("%.2f MB", finalApk.length() / (1024.0 * 1024.0)));
+                listener.onLog("=== BUILD FINISHED SUCCESSFULLY (" + String.format("%.2f", duration / 1000.0) + "s) ===");
+                listener.onLog("[OUTPUT] APK Location: " + finalApk.getAbsolutePath());
+                listener.onLog("[OUTPUT] Size: " + String.format("%.2f MB", finalApk.length() / (1024.0 * 1024.0)));
 
                 listener.onSuccess(finalApk, duration);
 
@@ -263,7 +263,7 @@ public class ApkBuilderEngine {
                 StringWriter sw = new StringWriter();
                 cause.printStackTrace(new PrintWriter(sw));
                 listener.onLog(sw.toString());
-                listener.onError("Kompilasi gagal: " + (cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName()));
+                listener.onError("Compilation failed: " + (cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName()));
             } finally {
                 isBuilding = false;
             }
@@ -397,7 +397,7 @@ public class ApkBuilderEngine {
 
             File resZip = new File(buildDir, "res.zip");
             if (project.getResDir() != null && project.getResDir().exists()) {
-                listener.onLog("[AAPT2] Mengompilasi resource proyek...");
+                listener.onLog("[AAPT2] Compiling project resources...");
                 List<String> cmdCompile = Arrays.asList(
                         aapt2Binary.getAbsolutePath(), "compile",
                         "--dir", project.getResDir().getAbsolutePath(),
@@ -405,11 +405,11 @@ public class ApkBuilderEngine {
                 );
                 int r1 = runProcess(cmdCompile, listener);
                 if (r1 != 0) {
-                    listener.onLog("[WARN] Kompilasi resource proyek gagal, mencoba overlay fallback...");
+                    listener.onLog("[WARN] Project resource compilation failed, attempting fallback overlay...");
                 }
             }
 
-            listener.onLog("[AAPT2] Menautkan manifest dan resource...");
+            listener.onLog("[AAPT2] Linking resources and manifest...");
             File linkManifest = prepareManifestForLink(project, buildDir);
 
             List<String> cmdLink = new ArrayList<>();
@@ -451,14 +451,14 @@ public class ApkBuilderEngine {
             }
 
             // Input dasar fallback stubs
-            if (fallbackZip.exists() && fallbackZip.length() > 0) {
+            if (fallbackZip != null && fallbackZip.exists() && fallbackZip.length() > 0) {
                 cmdLink.add(fallbackZip.getAbsolutePath());
             }
 
             // Overlay resource dari semua AAR yang dideklarasikan
-            if (depResult != null) {
+            if (depResult != null && depResult.getAarResZips() != null) {
                 for (File aarRes : depResult.getAarResZips()) {
-                    if (aarRes.exists() && aarRes.length() > 0) {
+                    if (aarRes != null && aarRes.exists() && aarRes.length() > 0) {
                         cmdLink.add("-R");
                         cmdLink.add(aarRes.getAbsolutePath());
                     }
@@ -466,7 +466,7 @@ public class ApkBuilderEngine {
             }
 
             // Overlay resource proyek aplikasi (diletakkan paling akhir agar mengambil prioritas tertinggi)
-            if (resZip.exists() && resZip.length() > 0) {
+            if (resZip != null && resZip.exists() && resZip.length() > 0) {
                 cmdLink.add("-R");
                 cmdLink.add(resZip.getAbsolutePath());
             }
@@ -481,22 +481,48 @@ public class ApkBuilderEngine {
 
     private File prepareManifestForLink(Project project, File buildDir) throws IOException {
         File origManifest = project.getManifestFile();
-        byte[] bytes = new byte[(int) origManifest.length()];
-        try (FileInputStream fis = new FileInputStream(origManifest)) {
-            int total = 0;
-            while (total < bytes.length) {
-                int r = fis.read(bytes, total, bytes.length - total);
-                if (r <= 0) break;
-                total += r;
+        String content;
+
+        if (origManifest == null || !origManifest.exists() || origManifest.length() == 0) {
+            String pkg = project.getPackageName() != null && SecurityAuditor.isValidPackageName(project.getPackageName())
+                    ? project.getPackageName() : "com.example.app";
+            content = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                    "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+                    "    package=\"" + pkg + "\">\n" +
+                    "    <uses-sdk android:minSdkVersion=\"" + project.getMinSdk() + "\" android:targetSdkVersion=\"" + project.getTargetSdk() + "\" />\n" +
+                    "    <application android:label=\"" + (project.getName() != null ? SecurityAuditor.sanitizeXmlText(project.getName()) : "App") + "\">\n" +
+                    "        <activity android:name=\".MainActivity\" android:exported=\"true\">\n" +
+                    "            <intent-filter>\n" +
+                    "                <action android:name=\"android.intent.action.MAIN\" />\n" +
+                    "                <category android:name=\"android.intent.category.LAUNCHER\" />\n" +
+                    "            </intent-filter>\n" +
+                    "        </activity>\n" +
+                    "    </application>\n" +
+                    "</manifest>\n";
+        } else {
+            byte[] bytes = new byte[(int) origManifest.length()];
+            try (FileInputStream fis = new FileInputStream(origManifest)) {
+                int total = 0;
+                while (total < bytes.length) {
+                    int r = fis.read(bytes, total, bytes.length - total);
+                    if (r <= 0) break;
+                    total += r;
+                }
             }
+            content = new String(bytes, "UTF-8");
         }
-        String content = new String(bytes, "UTF-8");
 
         // Periksa apakah tag <manifest memiliki atribut package
         if (!content.matches("(?s).*<manifest[^>]*\\bpackage\\s*=[^>]*>.*")) {
             String pkg = project.getPackageName() != null && SecurityAuditor.isValidPackageName(project.getPackageName())
                     ? project.getPackageName() : "com.example.app";
             content = content.replaceFirst("<manifest\\b", "<manifest package=\"" + pkg + "\" ");
+        }
+
+        // Pastikan ada tag <application> jika manifest berasal dari pure library
+        if (!content.contains("<application")) {
+            String appTag = "    <application android:label=\"" + (project.getName() != null ? SecurityAuditor.sanitizeXmlText(project.getName()) : "App") + "\" />\n";
+            content = content.replaceFirst("</manifest>", appTag + "</manifest>");
         }
 
         // Pastikan uses-sdk sesuai dengan project minSdk dan targetSdk (agar AAPT2 tidak mempertahankan SDK lama)
@@ -526,9 +552,9 @@ public class ApkBuilderEngine {
             }
 
             // Tambahkan classpath dari semua dependency AAR & JAR yang di-resolve
-            if (depResult != null) {
+            if (depResult != null && depResult.getClasspathJars() != null) {
                 for (File dj : depResult.getClasspathJars()) {
-                    if (dj.exists() && dj.length() > 0) {
+                    if (dj != null && dj.exists() && dj.length() > 0) {
                         if (cpBuilder.length() > 0) cpBuilder.append(File.pathSeparator);
                         cpBuilder.append(dj.getAbsolutePath());
                     }
@@ -541,15 +567,17 @@ public class ApkBuilderEngine {
                 File[] jars = libsDir.listFiles((dir, name) -> name.endsWith(".jar"));
                 if (jars != null) {
                     for (File j : jars) {
-                        if (cpBuilder.length() > 0) cpBuilder.append(File.pathSeparator);
-                        cpBuilder.append(j.getAbsolutePath());
+                        if (j != null && j.exists() && j.length() > 0) {
+                            if (cpBuilder.length() > 0) cpBuilder.append(File.pathSeparator);
+                            cpBuilder.append(j.getAbsolutePath());
+                        }
                     }
                 }
             }
 
             String cp = cpBuilder.toString();
 
-            listener.onLog("[ECJ] Menyiapkan parameter kompilasi...");
+            listener.onLog("[ECJ] Preparing compilation parameters...");
             List<String> argsList = new ArrayList<>();
             argsList.add("-1.8");
             argsList.add("-nowarn");
@@ -603,7 +631,7 @@ public class ApkBuilderEngine {
             }
 
             if (mainClass != null) {
-                listener.onLog("[ECJ] Mengompilasi via in-process ECJ compiler...");
+                listener.onLog("[ECJ] Compiling via in-process ECJ compiler...");
                 initEcjResourceBundle(mainClass.getClassLoader());
 
                 StringWriter outSw = new StringWriter();
@@ -625,7 +653,7 @@ public class ApkBuilderEngine {
             }
 
             // Fallback: javac CLI jika tersedia di sistem
-            listener.onLog("[JAVAC] Fallback ke perintah sistem javac...");
+            listener.onLog("[JAVAC] Fallback to system javac command...");
             List<String> cmd = new ArrayList<>();
             cmd.add("javac");
             cmd.add("-source");
@@ -712,9 +740,9 @@ public class ApkBuilderEngine {
             }
 
             // Tambahkan semua jar dependensi ke D8
-            if (depResult != null) {
+            if (depResult != null && depResult.getClasspathJars() != null) {
                 for (File dj : depResult.getClasspathJars()) {
-                    if (dj.exists() && dj.length() > 0) {
+                    if (dj != null && dj.exists() && dj.length() > 0) {
                         argsList.add(dj.getAbsolutePath());
                     }
                 }
@@ -752,7 +780,7 @@ public class ApkBuilderEngine {
             }
 
             if (d8Class != null) {
-                listener.onLog("[D8] Mengonversi bytecode via in-process D8 engine...");
+                listener.onLog("[D8] Converting bytecode via in-process D8 engine...");
                 Method mainMethod = d8Class.getMethod("main", String[].class);
                 mainMethod.invoke(null, (Object) argsList.toArray(new String[0]));
                 return new File(dexDir, "classes.dex").exists();
@@ -840,7 +868,7 @@ public class ApkBuilderEngine {
         for (File f : files) {
             String canonicalFile = f.getCanonicalPath();
             if (!canonicalFile.startsWith(canonicalRoot + File.separator) && !canonicalFile.equals(canonicalRoot)) {
-                throw new SecurityException("Pelanggaran Sandbox: File '" + f.getName() + "' berada di luar direktori proyek dan tidak boleh dimasukkan ke APK.");
+                throw new SecurityException("Sandbox Violation: File '" + f.getName() + "' resolves outside the project directory and cannot be packaged into the APK.");
             }
 
             String entryPath = parentPath + "/" + f.getName();

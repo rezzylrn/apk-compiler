@@ -68,7 +68,7 @@ public class DependencyManager {
                         if (!seen.contains(key)) {
                             seen.add(key);
                             deps.add(new Dependency(g, a, v, "aar"));
-                            if (log != null) log.onLog("[DEP] Terdeteksi di Gradle: " + g + ":" + a + ":" + v);
+                            if (log != null) log.onLog("[DEP] Detected in Gradle: " + g + ":" + a + ":" + v);
                         }
                     }
 
@@ -81,7 +81,7 @@ public class DependencyManager {
                         if (!seen.contains(key)) {
                             seen.add(key);
                             deps.add(new Dependency(g, a, v, "aar"));
-                            if (log != null) log.onLog("[DEP] Terdeteksi di Gradle: " + g + ":" + a + ":" + v);
+                            if (log != null) log.onLog("[DEP] Detected in Gradle: " + g + ":" + a + ":" + v);
                         }
                     }
                 }
@@ -99,7 +99,7 @@ public class DependencyManager {
                 if (files != null) {
                     for (File f : files) {
                         deps.add(new Dependency(f));
-                        if (log != null) log.onLog("[DEP] Terdeteksi file library lokal: " + f.getName());
+                        if (log != null) log.onLog("[DEP] Detected local library: " + f.getName());
                     }
                 }
             }
@@ -139,7 +139,7 @@ public class DependencyManager {
 
             if (needsAppCompat) {
                 deps.add(new Dependency("androidx.appcompat", "appcompat", "1.2.0", "aar"));
-                if (log != null) log.onLog("[DEP AUTO] Proyek menggunakan AppCompat, menambahkan androidx.appcompat:appcompat:1.2.0");
+                if (log != null) log.onLog("[DEP AUTO] Project uses AppCompat, adding dependency androidx.appcompat:appcompat:1.2.0");
             }
         }
 
@@ -180,7 +180,7 @@ public class DependencyManager {
         }
 
         if (assetIs != null) {
-            if (log != null) log.onLog("[DEP] Mengekstrak paket pustaka AndroidX Essentials...");
+            if (log != null) log.onLog("[DEP] Extracting AndroidX Essentials package...");
             try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(assetIs))) {
                 ZipEntry entry;
                 byte[] buf = new byte[8192];
@@ -197,10 +197,10 @@ public class DependencyManager {
                 }
                 File[] list = androidxDir.listFiles();
                 int count = list != null ? list.length : 0;
-                if (log != null) log.onLog("[DEP] AndroidX Essentials siap (" + count + " pustaka tersedia).");
+                if (log != null) log.onLog("[DEP] AndroidX Essentials ready (" + count + " libraries available).");
                 return true;
             } catch (Throwable t) {
-                if (log != null) log.onLog("[DEP ERR] Gagal mengekstrak AndroidX: " + t.getMessage());
+                if (log != null) log.onLog("[DEP ERR] Failed to extract AndroidX: " + t.getMessage());
             }
         }
 
@@ -236,7 +236,7 @@ public class DependencyManager {
         if (appcompatRequested && androidxDir.exists() && androidxDir.isDirectory()) {
             File[] essentialFiles = androidxDir.listFiles((d, n) -> n.endsWith(".aar") || n.endsWith(".jar"));
             if (essentialFiles != null && essentialFiles.length > 0) {
-                if (log != null) log.onLog("[DEP] Mengaktifkan AndroidX / AppCompat Essentials Pack (" + essentialFiles.length + " pustaka)...");
+                if (log != null) log.onLog("[DEP] Activating AndroidX / AppCompat Essentials Pack (" + essentialFiles.length + " libraries)...");
                 for (File ef : essentialFiles) {
                     if (!processedArtifactNames.contains(ef.getName())) {
                         processedArtifactNames.add(ef.getName());
@@ -291,7 +291,7 @@ public class DependencyManager {
             } else if (targetJar.exists() && targetJar.length() > 0) {
                 resolvedFile = targetJar;
             } else {
-                if (log != null) log.onLog("[DEP] Mengunduh dependensi: " + dep.getCoordinates() + "...");
+                if (log != null) log.onLog("[DEP] Downloading dependency: " + dep.getCoordinates() + "...");
                 // Try downloading AAR first, then JAR
                 boolean downloadedAar = MavenDownloader.downloadArtifact(dep.getGroupId(), dep.getArtifactId(), dep.getVersion(), "aar", targetAar, status -> {
                     if (log != null) log.onLog("[MAVEN] " + status);
@@ -365,7 +365,7 @@ public class DependencyManager {
         }
 
         if (log != null) {
-            log.onLog("[DEP RES] Berhasil memproses " + artifactsToProcess.size() + " artifact.");
+            log.onLog("[DEP RES] Successfully processed " + artifactsToProcess.size() + " artifacts.");
             log.onLog("[DEP RES] Classpath Jars: " + result.getClasspathJars().size() + ", AAR Res Zips: " + result.getAarResZips().size() + ", Extra packages: " + result.getExtraPackages().size());
         }
 
@@ -404,7 +404,7 @@ public class DependencyManager {
                     }
                 }
             } catch (Exception e) {
-                if (log != null) log.onLog("[WARN] Gagal mengekstrak AAR " + aarFile.getName() + ": " + e.getMessage());
+                if (log != null) log.onLog("[WARN] Failed to extract AAR " + aarFile.getName() + ": " + e.getMessage());
                 return;
             }
         }
@@ -456,10 +456,10 @@ public class DependencyManager {
                     Process p = pb.start();
                     int code = p.waitFor();
                     if (code != 0) {
-                        if (log != null) log.onLog("[WARN] aapt2 compile AAR res gagal untuk " + baseName + " (code " + code + ")");
+                        if (log != null) log.onLog("[WARN] aapt2 compile AAR res failed for " + baseName + " (code " + code + ")");
                     }
                 } catch (Exception e) {
-                    if (log != null) log.onLog("[WARN] Eksekusi aapt2 compile AAR res gagal: " + e.getMessage());
+                    if (log != null) log.onLog("[WARN] Failed to execute aapt2 compile AAR res: " + e.getMessage());
                 }
             }
 

@@ -274,7 +274,7 @@
                         android:background="@drawable/btn_primary"
                         android:text="Clone GitHub Repo"
                         android:textAllCaps="false"
-                        android:textColor="#0B132B"
+                        android:textColor="#FFFFFF"
                         android:textSize="13sp"
                         android:textStyle="bold" />
 
@@ -391,7 +391,7 @@
                 android:background="@drawable/btn_primary"
                 android:text="Compile to APK"
                 android:textAllCaps="false"
-                android:textColor="#0B132B"
+                android:textColor="#FFFFFF"
                 android:textSize="14sp"
                 android:textStyle="bold" />
 
@@ -584,7 +584,7 @@
                     android:background="@drawable/btn_primary"
                     android:text="Install All Dependencies"
                     android:textAllCaps="false"
-                    android:textColor="#0B132B"
+                    android:textColor="#FFFFFF"
                     android:textSize="13sp"
                     android:textStyle="bold" />
 

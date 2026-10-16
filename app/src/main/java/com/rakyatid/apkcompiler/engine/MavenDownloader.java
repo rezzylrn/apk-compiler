@@ -47,7 +47,7 @@ public class MavenDownloader {
         for (String repo : MAVEN_REPOS) {
             String url = repo + groupPath + "/" + artifactId + "/" + version + "/" + fileName;
             if (callback != null) {
-                callback.onProgress("Mengunduh " + fileName + " dari " + repo);
+                callback.onProgress("Downloading " + fileName + " from " + repo);
             }
             boolean ok = downloadFileWithFallback(url, destFile);
             if (ok && destFile.exists() && destFile.length() > 0) {

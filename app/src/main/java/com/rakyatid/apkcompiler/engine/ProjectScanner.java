@@ -121,31 +121,64 @@ public class ProjectScanner {
     }
 
     private static File findManifest(File root) {
-        // 1. app/src/main/AndroidManifest.xml
-        File f1 = new File(root, "app/src/main/AndroidManifest.xml");
-        if (f1.exists()) return f1;
+        if (root == null || !root.exists()) return null;
 
-        // 2. src/main/AndroidManifest.xml
-        File f2 = new File(root, "src/main/AndroidManifest.xml");
-        if (f2.exists()) return f2;
+        List<File> candidates = new ArrayList<>();
 
-        // 3. AndroidManifest.xml (flat)
-        File f3 = new File(root, "AndroidManifest.xml");
-        if (f3.exists()) return f3;
+        // 1. Direct standard locations
+        File[] direct = new File[]{
+                new File(root, "app/src/main/AndroidManifest.xml"),
+                new File(root, "app/AndroidManifest.xml"),
+                new File(root, "sample/src/main/AndroidManifest.xml"),
+                new File(root, "sample/AndroidManifest.xml"),
+                new File(root, "demo/src/main/AndroidManifest.xml"),
+                new File(root, "demo/AndroidManifest.xml"),
+                new File(root, "example/src/main/AndroidManifest.xml"),
+                new File(root, "example/AndroidManifest.xml"),
+                new File(root, "src/main/AndroidManifest.xml"),
+                new File(root, "AndroidManifest.xml")
+        };
+        for (File d : direct) {
+            if (d.exists() && !candidates.contains(d)) candidates.add(d);
+        }
 
-        // 4. Recursive search 2 level
+        // 2. Subdirectories
         File[] sub = root.listFiles();
         if (sub != null) {
             for (File s : sub) {
-                if (s.isDirectory()) {
+                if (s.isDirectory() && !s.getName().startsWith(".")) {
                     File m1 = new File(s, "src/main/AndroidManifest.xml");
-                    if (m1.exists()) return m1;
+                    if (m1.exists() && !candidates.contains(m1)) candidates.add(m1);
                     File m2 = new File(s, "AndroidManifest.xml");
-                    if (m2.exists()) return m2;
+                    if (m2.exists() && !candidates.contains(m2)) candidates.add(m2);
                 }
             }
         }
-        return null;
+
+        if (candidates.isEmpty()) return null;
+
+        // Prioritize manifest with <activity and <application (executable app over pure library)
+        File best = null;
+        int bestScore = -100;
+
+        for (File c : candidates) {
+            int score = 0;
+            String text = readFileQuick(c);
+            if (text != null) {
+                if (text.contains("<activity")) score += 20;
+                if (text.contains("<application")) score += 10;
+                if (c.getAbsolutePath().contains("/app/")) score += 5;
+                if (c.getAbsolutePath().contains("/sample/")) score += 4;
+                if (c.getAbsolutePath().contains("/demo/")) score += 3;
+                if (c.getAbsolutePath().contains("/library/")) score -= 15;
+            }
+            if (score > bestScore) {
+                bestScore = score;
+                best = c;
+            }
+        }
+
+        return best != null ? best : candidates.get(0);
     }
 
     private static File findJavaDir(File manifestParent, File root) {
