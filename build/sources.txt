@@ -1,0 +1,12 @@
+/home/hatch/workspace/apk-compiler/build/gen/com/rakyatid/apkcompiler/R.java
+/home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/model/Project.java
+/home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/model/ToolchainItem.java
+/home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/engine/GitRepoCloner.java
+/home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/engine/ZipAlignUtil.java
+/home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/engine/ApkFileProvider.java
+/home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/engine/ProjectScanner.java
+/home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/engine/ToolchainManager.java
+/home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/engine/ApkBuilderEngine.java
+/home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/engine/ApkSignerUtil.java
+/home/hatch/workspace/apk-compiler/app/src/main/java/com/rakyatid/apkcompiler/MainActivity.java
+/home/hatch/workspace/apk-compiler/app/src/main/java/javax/lang/model/SourceVersion.java

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/card_bg"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Clone Repository GitHub"
+        android:textColor="@color/text_primary"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Masukkan URL repository Android untuk diunduh langsung ke perangkat."
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:text="URL Repository"
+        android:textColor="@color/text_muted"
+        android:textSize="11sp" />
+
+    <EditText
+        android:id="@+id/et_repo_url"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/edit_text_bg"
+        android:hint="https://github.com/user/android-app"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:singleLine="true"
+        android:textColor="@color/text_primary"
+        android:textColorHint="@color/text_muted"
+        android:textSize="13sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Branch (Opsional, default: main)"
+        android:textColor="@color/text_muted"
+        android:textSize="11sp" />
+
+    <EditText
+        android:id="@+id/et_branch"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/edit_text_bg"
+        android:hint="main"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:singleLine="true"
+        android:textColor="@color/text_primary"
+        android:textColorHint="@color/text_muted"
+        android:textSize="13sp" />
+
+    <!-- Quick Presets -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="PRESET CONTOH REPO CEPAT:"
+        android:textColor="@color/text_muted"
+        android:textSize="10sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_preset_flashlight"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:layout_marginRight="4dp"
+            android:background="@drawable/btn_secondary"
+            android:text="Flashlight (sanbeg)"
+            android:textAllCaps="false"
+            android:textColor="@color/primary_accent"
+            android:textSize="10sp" />
+
+        <Button
+            android:id="@+id/btn_preset_compass"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:layout_marginLeft="4dp"
+            android:background="@drawable/btn_secondary"
+            android:text="Compass (iutinvg)"
+            android:textAllCaps="false"
+            android:textColor="@color/primary_accent"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/progress_clone"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginTop="12dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/tv_clone_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/primary_accent"
+        android:textSize="11sp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="right"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_clone_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:background="@drawable/btn_secondary"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:text="Batal"
+            android:textAllCaps="false"
+            android:textColor="@color/text_primary"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/btn_clone_submit"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:layout_marginLeft="8dp"
+            android:background="@drawable/btn_primary"
+            android:paddingLeft="18dp"
+            android:paddingRight="18dp"
+            android:text="Clone &amp; Buka"
+            android:textAllCaps="false"
+            android:textColor="#0B132B"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

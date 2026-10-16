@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    android:background="@drawable/card_bg"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_item_project_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ProjectName"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_item_project_pkg"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="com.example.pkg"
+                android:textColor="@color/text_muted"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_item_project_stats"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="12 file"
+            android:textColor="@color/primary_accent"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="right"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_item_delete"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:background="@drawable/btn_secondary"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:text="Hapus"
+            android:textAllCaps="false"
+            android:textColor="@color/accent_red"
+            android:textSize="11sp" />
+
+        <Button
+            android:id="@+id/btn_item_select"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:layout_marginLeft="6dp"
+            android:background="@drawable/btn_primary"
+            android:paddingLeft="14dp"
+            android:paddingRight="14dp"
+            android:text="Pilih Proyek"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

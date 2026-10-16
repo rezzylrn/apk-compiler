@@ -1,0 +1,619 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_main">
+
+    <!-- Top App Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:background="@color/surface_card"
+        android:gravity="center_vertical">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="APK Compiler"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_header_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Git Cloner &amp; On-Device Compiler"
+                android:textColor="@color/text_muted"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/badge_toolchain_header"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/badge_ready"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:text="Toolchain Siap"
+            android:textColor="@color/accent_green"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Navigation Tabs -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:orientation="horizontal"
+        android:background="@color/surface_elevated"
+        android:weightSum="4">
+
+        <TextView
+            android:id="@+id/tab_projects"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="Proyek"
+            android:textColor="@color/primary_accent"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tab_build"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="Kompilasi"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/tab_toolchain"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="Toolchain"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/tab_files"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="File"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/surface_border" />
+
+    <!-- Tab Container -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <!-- ================= TAB 1: PROYEK ================= -->
+        <ScrollView
+            android:id="@+id/view_tab_projects"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Active Project Card -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/card_bg"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="PROYEK AKTIF"
+                        android:textColor="@color/primary_accent"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_active_project_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Belum ada proyek dipilih"
+                        android:textColor="@color/text_primary"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_active_project_pkg"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="-"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:orientation="horizontal"
+                        android:weightSum="3">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Min/Target SDK"
+                                android:textColor="@color/text_muted"
+                                android:textSize="10sp" />
+                            <TextView
+                                android:id="@+id/tv_active_sdk"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="-"
+                                android:textColor="@color/text_primary"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="File Java"
+                                android:textColor="@color/text_muted"
+                                android:textSize="10sp" />
+                            <TextView
+                                android:id="@+id/tv_active_java_count"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="@color/text_primary"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Resource"
+                                android:textColor="@color/text_muted"
+                                android:textSize="10sp" />
+                            <TextView
+                                android:id="@+id/tv_active_res_count"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="@color/text_primary"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Actions Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btn_open_clone_dialog"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_weight="1"
+                        android:layout_marginRight="6dp"
+                        android:background="@drawable/btn_primary"
+                        android:text="Clone GitHub Repo"
+                        android:textAllCaps="false"
+                        android:textColor="#0B132B"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btn_open_folder_picker"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_weight="1"
+                        android:layout_marginLeft="6dp"
+                        android:background="@drawable/btn_secondary"
+                        android:text="Pilih Folder Lokal"
+                        android:textAllCaps="false"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btn_create_sample_project"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/btn_secondary"
+                    android:text="Buat Proyek Contoh (Offline)"
+                    android:textAllCaps="false"
+                    android:textColor="@color/primary_accent"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <!-- Local Projects List -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="DAFTAR PROYEK TERSEDIA"
+                    android:textColor="@color/text_muted"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/container_projects_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/tv_empty_projects"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center"
+                    android:text="Belum ada proyek yang di-clone. Gunakan tombol 'Clone GitHub Repo' di atas."
+                    android:textColor="@color/text_muted"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- ================= TAB 2: KOMPILASI ================= -->
+        <LinearLayout
+            android:id="@+id/view_tab_build"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="14dp"
+            android:visibility="gone">
+
+            <!-- Compile Action Button -->
+            <Button
+                android:id="@+id/btn_start_compile"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/btn_primary"
+                android:text="Kompilasi Menjadi APK"
+                android:textAllCaps="false"
+                android:textColor="#0B132B"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <!-- Progress Bar -->
+            <ProgressBar
+                android:id="@+id/progress_build"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:layout_marginTop="10dp"
+                android:max="100"
+                android:progress="0"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tv_build_step"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Status: Siap kompilasi"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+
+            <!-- Output Success Card -->
+            <LinearLayout
+                android:id="@+id/card_build_output"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/card_bg"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="APK HASIL BUILD SIAP"
+                        android:textColor="@color/accent_green"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_output_size"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1.2 MB"
+                        android:textColor="@color/text_primary"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_output_path"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="/path/to/output.apk"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btn_install_apk"
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_weight="1"
+                        android:layout_marginRight="6dp"
+                        android:background="@drawable/btn_success"
+                        android:text="Install APK"
+                        android:textAllCaps="false"
+                        android:textColor="#FFFFFF"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btn_share_apk"
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_weight="1"
+                        android:layout_marginLeft="6dp"
+                        android:background="@drawable/btn_secondary"
+                        android:text="Bagikan File"
+                        android:textAllCaps="false"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Console Log Window -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/console_bg"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="32dp"
+                    android:orientation="horizontal"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp"
+                    android:background="#12151B"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="TERMINAL LOG"
+                        android:textColor="@color/text_muted"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/btn_clear_log"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Bersihkan"
+                        android:textColor="@color/primary_accent"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <ScrollView
+                    android:id="@+id/scroll_console"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="8dp">
+
+                    <TextView
+                        android:id="@+id/tv_console_log"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:typeface="monospace"
+                        android:textSize="11sp"
+                        android:textColor="@color/console_text"
+                        android:text="[READY] Sistem siap. Pilih proyek lalu tekan 'Kompilasi Menjadi APK'.\n" />
+                </ScrollView>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ================= TAB 3: TOOLCHAIN ================= -->
+        <ScrollView
+            android:id="@+id/view_tab_toolchain"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PENGELOLA TOOLCHAIN &amp; DEPENDENSI"
+                    android:textColor="@color/primary_accent"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Komponen compiler dapat diunduh dan dipasang langsung dari dalam aplikasi tanpa perlu root."
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btn_install_toolchain"
+                    android:layout_width="match_parent"
+                    android:layout_height="46dp"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/btn_primary"
+                    android:text="Pasang Semua Dependensi"
+                    android:textAllCaps="false"
+                    android:textColor="#0B132B"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <ProgressBar
+                    android:id="@+id/progress_toolchain"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="6dp"
+                    android:layout_marginTop="10dp"
+                    android:max="100"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/tv_toolchain_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="STATUS KOMPONEN"
+                    android:textColor="@color/text_muted"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/container_toolchain_items"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- ================= TAB 4: FILE EXPLORER ================= -->
+        <LinearLayout
+            android:id="@+id/view_tab_files"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <Button
+                    android:id="@+id/btn_file_up"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:background="@drawable/btn_secondary"
+                    android:paddingLeft="12dp"
+                    android:paddingRight="12dp"
+                    android:text="Ke Atas (..)"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tv_current_dir_path"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="10dp"
+                    android:ellipsize="start"
+                    android:singleLine="true"
+                    android:text="/path/proyek"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:layout_marginTop="10dp">
+
+                <LinearLayout
+                    android:id="@+id/container_file_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </ScrollView>
+        </LinearLayout>
+
+    </FrameLayout>
+</LinearLayout>

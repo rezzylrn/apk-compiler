@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/card_bg"
+    android:orientation="vertical"
+    android:padding="18dp">
+
+    <!-- Header Title -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Pilih Folder Proyek"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btn_picker_up"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:background="@drawable/btn_secondary"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:text="Ke Atas (..)"
+            android:textAllCaps="false"
+            android:textColor="@color/text_primary"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- Path Bar Box -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/console_bg"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingTop="7dp"
+        android:paddingBottom="7dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PATH:"
+            android:textColor="@color/text_muted"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_picker_current_path"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginLeft="6dp"
+            android:ellipsize="start"
+            android:singleLine="true"
+            android:text="/storage/emulated/0"
+            android:textColor="@color/console_text"
+            android:textSize="11sp"
+            android:typeface="monospace" />
+    </LinearLayout>
+
+    <!-- Directory Scroll Area -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="260dp"
+        android:layout_marginTop="10dp"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/container_picker_dirs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <TextView
+                android:id="@+id/tv_picker_empty"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:gravity="center"
+                android:text="Tidak ada subfolder di direktori ini"
+                android:textColor="@color/text_muted"
+                android:textSize="12sp"
+                android:visibility="gone" />
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Actions Footer -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:gravity="right"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_picker_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:background="@drawable/btn_secondary"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:text="Batal"
+            android:textAllCaps="false"
+            android:textColor="@color/text_primary"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/btn_picker_choose"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:layout_marginLeft="8dp"
+            android:background="@drawable/btn_primary"
+            android:paddingLeft="18dp"
+            android:paddingRight="18dp"
+            android:text="Gunakan Folder Ini"
+            android:textAllCaps="false"
+            android:textColor="#0B132B"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

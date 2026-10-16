@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="40dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingLeft="10dp"
+    android:paddingRight="10dp"
+    android:background="@drawable/card_bg"
+    android:layout_marginBottom="4dp">
+
+    <TextView
+        android:id="@+id/tv_file_type"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="[DIR]"
+        android:textColor="@color/primary_accent"
+        android:textSize="10sp"
+        android:typeface="monospace" />
+
+    <TextView
+        android:id="@+id/tv_file_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginLeft="8dp"
+        android:ellipsize="middle"
+        android:singleLine="true"
+        android:text="filename.txt"
+        android:textColor="@color/text_primary"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/tv_file_size"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="4 KB"
+        android:textColor="@color/text_muted"
+        android:textSize="10sp" />
+</LinearLayout>
