@@ -33,6 +33,10 @@ public final class R {
     public static final int card_bg=0x7f020005;
     public static final int console_bg=0x7f020006;
     public static final int edit_text_bg=0x7f020007;
+    public static final int ic_app_logo=0x7f020008;
+    public static final int ic_launcher_background=0x7f020009;
+    public static final int ic_launcher_foreground=0x7f02000a;
+    public static final int ic_launcher_web=0x7f02000b;
   }
   public static final class id {
     public static final int badge_toolchain_header=0x7f030000;
@@ -64,49 +68,50 @@ public final class R {
     public static final int et_branch=0x7f03001a;
     public static final int et_code_content=0x7f03001b;
     public static final int et_repo_url=0x7f03001c;
-    public static final int progress_build=0x7f03001d;
-    public static final int progress_clone=0x7f03001e;
-    public static final int progress_toolchain=0x7f03001f;
-    public static final int scroll_console=0x7f030020;
-    public static final int tab_build=0x7f030021;
-    public static final int tab_files=0x7f030022;
-    public static final int tab_projects=0x7f030023;
-    public static final int tab_toolchain=0x7f030024;
-    public static final int tv_active_java_count=0x7f030025;
-    public static final int tv_active_project_name=0x7f030026;
-    public static final int tv_active_project_pkg=0x7f030027;
-    public static final int tv_active_res_count=0x7f030028;
-    public static final int tv_active_sdk=0x7f030029;
-    public static final int tv_build_step=0x7f03002a;
-    public static final int tv_clone_status=0x7f03002b;
-    public static final int tv_console_log=0x7f03002c;
-    public static final int tv_current_dir_path=0x7f03002d;
-    public static final int tv_editor_file_info=0x7f03002e;
-    public static final int tv_editor_file_path=0x7f03002f;
-    public static final int tv_editor_title=0x7f030030;
-    public static final int tv_empty_projects=0x7f030031;
-    public static final int tv_file_name=0x7f030032;
-    public static final int tv_file_size=0x7f030033;
-    public static final int tv_file_type=0x7f030034;
-    public static final int tv_header_subtitle=0x7f030035;
-    public static final int tv_item_project_name=0x7f030036;
-    public static final int tv_item_project_pkg=0x7f030037;
-    public static final int tv_item_project_stats=0x7f030038;
-    public static final int tv_output_path=0x7f030039;
-    public static final int tv_output_size=0x7f03003a;
-    public static final int tv_picker_current_path=0x7f03003b;
-    public static final int tv_picker_dir_name=0x7f03003c;
-    public static final int tv_picker_empty=0x7f03003d;
-    public static final int tv_tool_badge=0x7f03003e;
-    public static final int tv_tool_desc=0x7f03003f;
-    public static final int tv_tool_name=0x7f030040;
-    public static final int tv_tool_path=0x7f030041;
-    public static final int tv_tool_size=0x7f030042;
-    public static final int tv_toolchain_status=0x7f030043;
-    public static final int view_tab_build=0x7f030044;
-    public static final int view_tab_files=0x7f030045;
-    public static final int view_tab_projects=0x7f030046;
-    public static final int view_tab_toolchain=0x7f030047;
+    public static final int iv_header_logo=0x7f03001d;
+    public static final int progress_build=0x7f03001e;
+    public static final int progress_clone=0x7f03001f;
+    public static final int progress_toolchain=0x7f030020;
+    public static final int scroll_console=0x7f030021;
+    public static final int tab_build=0x7f030022;
+    public static final int tab_files=0x7f030023;
+    public static final int tab_projects=0x7f030024;
+    public static final int tab_toolchain=0x7f030025;
+    public static final int tv_active_java_count=0x7f030026;
+    public static final int tv_active_project_name=0x7f030027;
+    public static final int tv_active_project_pkg=0x7f030028;
+    public static final int tv_active_res_count=0x7f030029;
+    public static final int tv_active_sdk=0x7f03002a;
+    public static final int tv_build_step=0x7f03002b;
+    public static final int tv_clone_status=0x7f03002c;
+    public static final int tv_console_log=0x7f03002d;
+    public static final int tv_current_dir_path=0x7f03002e;
+    public static final int tv_editor_file_info=0x7f03002f;
+    public static final int tv_editor_file_path=0x7f030030;
+    public static final int tv_editor_title=0x7f030031;
+    public static final int tv_empty_projects=0x7f030032;
+    public static final int tv_file_name=0x7f030033;
+    public static final int tv_file_size=0x7f030034;
+    public static final int tv_file_type=0x7f030035;
+    public static final int tv_header_subtitle=0x7f030036;
+    public static final int tv_item_project_name=0x7f030037;
+    public static final int tv_item_project_pkg=0x7f030038;
+    public static final int tv_item_project_stats=0x7f030039;
+    public static final int tv_output_path=0x7f03003a;
+    public static final int tv_output_size=0x7f03003b;
+    public static final int tv_picker_current_path=0x7f03003c;
+    public static final int tv_picker_dir_name=0x7f03003d;
+    public static final int tv_picker_empty=0x7f03003e;
+    public static final int tv_tool_badge=0x7f03003f;
+    public static final int tv_tool_desc=0x7f030040;
+    public static final int tv_tool_name=0x7f030041;
+    public static final int tv_tool_path=0x7f030042;
+    public static final int tv_tool_size=0x7f030043;
+    public static final int tv_toolchain_status=0x7f030044;
+    public static final int view_tab_build=0x7f030045;
+    public static final int view_tab_files=0x7f030046;
+    public static final int view_tab_projects=0x7f030047;
+    public static final int view_tab_toolchain=0x7f030048;
   }
   public static final class layout {
     public static final int activity_main=0x7f040000;
@@ -118,33 +123,37 @@ public final class R {
     public static final int item_project=0x7f040006;
     public static final int item_toolchain=0x7f040007;
   }
+  public static final class mipmap {
+    public static final int ic_launcher=0x7f050000;
+    public static final int ic_launcher_round=0x7f050001;
+  }
   public static final class string {
-    public static final int app_name=0x7f050000;
-    public static final int btn_clone_repo=0x7f050001;
-    public static final int btn_compile=0x7f050002;
-    public static final int btn_install_apk=0x7f050003;
-    public static final int btn_install_tools=0x7f050004;
-    public static final int btn_select_folder=0x7f050005;
-    public static final int btn_share_apk=0x7f050006;
-    public static final int label_active_project=0x7f050007;
-    public static final int label_console=0x7f050008;
-    public static final int label_no_project=0x7f050009;
-    public static final int label_output=0x7f05000a;
-    public static final int status_compiling=0x7f05000b;
-    public static final int status_failed=0x7f05000c;
-    public static final int status_idle=0x7f05000d;
-    public static final int status_missing=0x7f05000e;
-    public static final int status_ready=0x7f05000f;
-    public static final int status_success=0x7f050010;
-    public static final int title_build=0x7f050011;
-    public static final int title_files=0x7f050012;
-    public static final int title_projects=0x7f050013;
-    public static final int title_toolchain=0x7f050014;
+    public static final int app_name=0x7f060000;
+    public static final int btn_clone_repo=0x7f060001;
+    public static final int btn_compile=0x7f060002;
+    public static final int btn_install_apk=0x7f060003;
+    public static final int btn_install_tools=0x7f060004;
+    public static final int btn_select_folder=0x7f060005;
+    public static final int btn_share_apk=0x7f060006;
+    public static final int label_active_project=0x7f060007;
+    public static final int label_console=0x7f060008;
+    public static final int label_no_project=0x7f060009;
+    public static final int label_output=0x7f06000a;
+    public static final int status_compiling=0x7f06000b;
+    public static final int status_failed=0x7f06000c;
+    public static final int status_idle=0x7f06000d;
+    public static final int status_missing=0x7f06000e;
+    public static final int status_ready=0x7f06000f;
+    public static final int status_success=0x7f060010;
+    public static final int title_build=0x7f060011;
+    public static final int title_files=0x7f060012;
+    public static final int title_projects=0x7f060013;
+    public static final int title_toolchain=0x7f060014;
   }
   public static final class style {
-    public static final int AppTheme=0x7f060000;
+    public static final int AppTheme=0x7f070000;
   }
   public static final class xml {
-    public static final int file_paths=0x7f070000;
+    public static final int file_paths=0x7f080000;
   }
 }

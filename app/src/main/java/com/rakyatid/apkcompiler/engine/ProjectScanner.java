@@ -75,7 +75,11 @@ public class ProjectScanner {
         int javaCount = javaSrc != null ? countFiles(javaSrc, ".java") : 0;
         int resCount = resDir != null ? countAllFiles(resDir) : 0;
 
-        return new Project(dir.getName(), dir, manifest, javaSrc, resDir, pkg, minSdk, targetSdk, javaCount, resCount, true);
+        Project p = new Project(dir.getName(), dir, manifest, javaSrc, resDir, pkg, minSdk, targetSdk, javaCount, resCount, true);
+        try {
+            p.setDependencies(DependencyManager.detectProjectDependencies(p, null));
+        } catch (Throwable ignored) {}
+        return p;
     }
 
     private static File findManifest(File root) {

@@ -154,6 +154,10 @@ public class MainActivity extends Activity {
         findViewById(R.id.btn_create_sample_project).setOnClickListener(v -> createOfflineSampleProject());
         findViewById(R.id.btn_clear_log).setOnClickListener(v -> tvConsoleLog.setText(""));
         badgeToolchainHeader.setOnClickListener(v -> switchTab(2));
+        View ivLogo = findViewById(R.id.iv_header_logo);
+        if (ivLogo != null) {
+            ivLogo.setOnClickListener(v -> showAboutDialog());
+        }
 
         btnStartCompile.setOnClickListener(v -> startCompile());
 
@@ -270,6 +274,16 @@ public class MainActivity extends Activity {
                 etUrl.setError("URL wajib diisi");
                 return;
             }
+            if (!SecurityAuditor.isValidGitUrl(url)) {
+                etUrl.setError("URL tidak valid atau tidak aman. Gunakan format https://github.com/owner/repo");
+                return;
+            }
+
+            String branch = etBranch.getText().toString().trim();
+            if (!branch.isEmpty() && !SecurityAuditor.isValidBranch(branch)) {
+                etBranch.setError("Nama branch tidak valid!");
+                return;
+            }
 
             btnSubmit.setEnabled(false);
             btnCancel.setEnabled(false);
@@ -277,7 +291,6 @@ public class MainActivity extends Activity {
             tvStatus.setVisibility(View.VISIBLE);
             tvStatus.setText("Menghubungkan ke GitHub...");
 
-            String branch = etBranch.getText().toString().trim();
             File outDir = getProjectsDir();
 
             GitRepoCloner.cloneGitHub(url, branch, outDir, new GitRepoCloner.CloneListener() {
@@ -373,8 +386,17 @@ public class MainActivity extends Activity {
         };
 
         btnUp.setOnClickListener(v -> {
-            if (currentDirRef[0].getParentFile() != null) {
-                currentDirRef[0] = currentDirRef[0].getParentFile();
+            File parent = currentDirRef[0].getParentFile();
+            if (parent != null) {
+                try {
+                    String parentCanon = parent.getCanonicalPath();
+                    String appData = getApplicationInfo().dataDir;
+                    if (appData != null && parentCanon.startsWith(appData)) {
+                        Toast.makeText(MainActivity.this, "Akses ke folder internal aplikasi dibatasi", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                } catch (Exception ignored) {}
+                currentDirRef[0] = parent;
                 updateDirs.run();
             }
         });
@@ -590,6 +612,21 @@ public class MainActivity extends Activity {
 
     private void loadExplorerDirectory(File dir) {
         if (dir == null || !dir.exists()) return;
+
+        // Sandboxing: ensure explorer never navigates outside active project root
+        if (activeProject != null && activeProject.getRootDir() != null) {
+            try {
+                String targetCanon = dir.getCanonicalPath();
+                String rootCanon = activeProject.getRootDir().getCanonicalPath();
+                if (!targetCanon.startsWith(rootCanon + File.separator) && !targetCanon.equals(rootCanon)) {
+                    Toast.makeText(this, "Navigasi di luar direktori proyek diblokir demi keamanan!", Toast.LENGTH_SHORT).show();
+                    dir = activeProject.getRootDir();
+                }
+            } catch (Exception e) {
+                dir = activeProject.getRootDir();
+            }
+        }
+
         currentExplorerDir = dir;
         tvCurrentDirPath.setText(dir.getAbsolutePath());
         containerFileList.removeAllViews();
@@ -621,6 +658,20 @@ public class MainActivity extends Activity {
     }
 
     private void openCodeEditorDialog(File f) {
+        // Sandboxing: ensure file is strictly inside active project directory
+        if (activeProject != null && activeProject.getRootDir() != null) {
+            try {
+                String fCanon = f.getCanonicalPath();
+                String rootCanon = activeProject.getRootDir().getCanonicalPath();
+                if (!fCanon.startsWith(rootCanon + File.separator)) {
+                    Toast.makeText(this, "Akses file di luar direktori proyek diblokir demi keamanan!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            } catch (Exception e) {
+                return;
+            }
+        }
+
         String name = f.getName().toLowerCase();
         boolean isText = name.endsWith(".java") || name.endsWith(".xml") || name.endsWith(".gradle") ||
                          name.endsWith(".txt") || name.endsWith(".json") || name.endsWith(".properties") ||
@@ -829,6 +880,19 @@ public class MainActivity extends Activity {
         File dir = new File(getExternalFilesDir(null), "projects");
         if (!dir.exists()) dir.mkdirs();
         return dir;
+    }
+
+    private void showAboutDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("APK Compiler");
+        builder.setIcon(R.drawable.ic_app_logo);
+        builder.setMessage("⚡ On-Device APK Compiler & Git Cloner\n\n"
+                + "Versi: 1.0.0\n"
+                + "Target SDK: 34 (Android 14)\n"
+                + "Engine: AAPT2 + ECJ + D8 + Apksigner\n\n"
+                + "Aplikasi kompilasi native on-device Android tanpa Gradle / PC.");
+        builder.setPositiveButton("Tutup", (d, w) -> d.dismiss());
+        builder.show();
     }
 
     private void deleteRecursive(File f) {

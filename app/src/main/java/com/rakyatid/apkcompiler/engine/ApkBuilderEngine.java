@@ -1,6 +1,7 @@
 package com.rakyatid.apkcompiler.engine;
 
 import android.content.Context;
+import com.rakyatid.apkcompiler.model.Dependency;
 import com.rakyatid.apkcompiler.model.Project;
 
 import java.io.*;
@@ -44,10 +45,24 @@ public class ApkBuilderEngine {
         new Thread(() -> {
             long startTime = System.currentTimeMillis();
             try {
-                listener.onProgress(1, 6, "Menyiapkan direktori build...");
+                listener.onProgress(1, 6, "[1/6] Menyiapkan direktori build...");
                 listener.onLog("=== MEMULAI KOMPILASI PROYEK: " + project.getName() + " ===");
                 listener.onLog("[INFO] Package: " + project.getPackageName());
                 listener.onLog("[INFO] Min SDK: " + project.getMinSdk() + ", Target SDK: " + project.getTargetSdk());
+
+                // Audit Keamanan Proyek & Sandboxing
+                listener.onLog("[SECURITY] Menjalankan audit keamanan proyek...");
+                SecurityAuditor.AuditResult auditResult = SecurityAuditor.auditProject(project, listener::onLog);
+                if (!auditResult.isSafe()) {
+                    StringBuilder sb = new StringBuilder("Kompilasi dibatalkan demi keamanan:\n");
+                    for (String v : auditResult.getViolations()) {
+                        sb.append(" - ").append(v).append("\n");
+                    }
+                    throw new SecurityException(sb.toString().trim());
+                }
+                for (String warning : auditResult.getWarnings()) {
+                    listener.onLog("[SECURITY WARN] " + warning);
+                }
 
                 File buildDir = new File(project.getRootDir(), "build");
                 File genDir = new File(buildDir, "gen");
@@ -65,28 +80,54 @@ public class ApkBuilderEngine {
                 dexDir.mkdirs();
                 distDir.mkdirs();
 
+                File toolchainDir = toolchain.getToolchainDir();
                 File androidJar = toolchain.getFile("android_jar");
                 if (androidJar == null || !androidJar.exists()) {
-                    // Coba cek aset atau platform default
-                    File localJar = new File(context.getFilesDir(), "toolchain/android.jar");
+                    File localJar = new File(toolchainDir, "android.jar");
                     if (localJar.exists()) {
                         androidJar = localJar;
                     }
                 }
+                if (androidJar == null || !androidJar.exists()) {
+                    File sdkJar = new File("/home/hatch/android-sdk/platforms/android-34/android.jar");
+                    if (sdkJar.exists()) {
+                        androidJar = sdkJar;
+                    }
+                }
 
-                // STEP 1: AAPT2 / Resource & Manifest
-                listener.onProgress(2, 6, "[1/5] Memproses Resource dan Manifest...");
-                listener.onLog("[1/5] Memproses Resource & Manifest...");
+                File aapt2Binary = toolchain.getFile("aapt2");
+                if (aapt2Binary == null || !aapt2Binary.exists()) {
+                    File sdkAapt2 = new File("/home/hatch/android-sdk/build-tools/34.0.0/aapt2");
+                    if (sdkAapt2.exists()) {
+                        aapt2Binary = sdkAapt2;
+                    }
+                }
+
+                // STEP 1.5: Resolusi Dependensi & AAR Libraries
+                listener.onProgress(2, 6, "[2/6] Memeriksa dan Menyelesaikan Dependensi...");
+                listener.onLog("[2/6] Menyelesaikan dependensi & pustaka AAR/JAR...");
+                List<Dependency> projectDeps = project.getDependencies();
+                if (projectDeps == null || projectDeps.isEmpty()) {
+                    projectDeps = DependencyManager.detectProjectDependencies(project, listener::onLog);
+                    project.setDependencies(projectDeps);
+                }
+
+                DependencyManager.ResolutionResult depResult = DependencyManager.resolve(
+                        project, projectDeps, toolchainDir, buildDir, aapt2Binary, context, listener::onLog
+                );
+
+                // STEP 2: AAPT2 / Resource & Manifest
+                listener.onProgress(3, 6, "[3/6] Memproses Resource dan Manifest...");
+                listener.onLog("[3/6] Memproses Resource & Manifest...");
 
                 File unsignedApk = new File(buildDir, "unsigned.apk");
-                File aapt2Binary = toolchain.getFile("aapt2");
 
                 boolean aapt2Success = false;
                 if (aapt2Binary != null && aapt2Binary.exists() && androidJar != null && androidJar.exists()) {
                     try {
                         aapt2Binary.setExecutable(true, false);
                     } catch (Throwable ignored) {}
-                    aapt2Success = runAapt2(project, buildDir, genDir, unsignedApk, aapt2Binary, androidJar, listener);
+                    aapt2Success = runAapt2(project, buildDir, genDir, unsignedApk, aapt2Binary, androidJar, depResult, listener);
                 }
 
                 if (!aapt2Success) {
@@ -99,9 +140,9 @@ public class ApkBuilderEngine {
                     }
                 }
 
-                // STEP 2: Kompilasi Java (.java -> .class)
-                listener.onProgress(3, 6, "[2/5] Mengompilasi Kode Java...");
-                listener.onLog("[2/5] Mengompilasi kode Java...");
+                // STEP 3: Kompilasi Java (.java -> .class)
+                listener.onProgress(4, 6, "[4/6] Mengompilasi Kode Java...");
+                listener.onLog("[4/6] Mengompilasi kode Java...");
 
                 List<File> javaFiles = new ArrayList<>();
                 if (project.getJavaSrcDir() != null) {
@@ -113,22 +154,22 @@ public class ApkBuilderEngine {
                     throw new IOException("Tidak ada file kode sumber .java yang ditemukan.");
                 }
 
-                listener.onLog("[INFO] Ditemukan " + javaFiles.size() + " file sumber Java.");
-                boolean javaSuccess = compileJavaSources(project, javaFiles, objDir, androidJar, listener);
+                listener.onLog("[INFO] Ditemukan " + javaFiles.size() + " file sumber Java (termasuk kelas R).");
+                boolean javaSuccess = compileJavaSources(project, javaFiles, objDir, androidJar, depResult, listener);
                 if (!javaSuccess) {
                     throw new IOException("Kompilasi Java gagal. Periksa error sintaks pada log.");
                 }
 
-                // STEP 3: DEX Compilation (.class -> classes.dex)
-                listener.onProgress(4, 6, "[3/5] Mengonversi ke Dalvik Executable (classes.dex)...");
-                listener.onLog("[3/5] Mengonversi bytecode ke classes.dex via D8...");
+                // STEP 4: DEX Compilation (.class -> classes.dex)
+                listener.onProgress(5, 6, "[5/6] Mengonversi ke Dalvik Executable (classes.dex)...");
+                listener.onLog("[5/6] Mengonversi bytecode ke classes.dex via D8...");
 
                 List<File> classFiles = ProjectScanner.listSourceFiles(objDir, ".class");
                 if (classFiles.isEmpty()) {
                     throw new IOException("File .class tidak ditemukan setelah kompilasi Java.");
                 }
 
-                boolean dexSuccess = compileDex(project, classFiles, dexDir, androidJar, listener);
+                boolean dexSuccess = compileDex(project, classFiles, dexDir, androidJar, depResult, listener);
                 if (!dexSuccess) {
                     throw new IOException("Kompilasi D8/Dex gagal.");
                 }
@@ -139,21 +180,22 @@ public class ApkBuilderEngine {
                 }
                 listener.onLog("[SUCCESS] classes.dex berhasil dibuat (" + (classesDex.length() / 1024) + " KB).");
 
-                // STEP 4: Package APK (Gabungkan dex + res)
-                listener.onProgress(5, 6, "[4/5] Merakit paket APK...");
-                listener.onLog("[4/5] Merakit paket APK...");
+                // STEP 5: Package APK (Gabungkan dex + res + assets)
+                listener.onProgress(6, 6, "[6/6] Merakit dan Menandatangani Paket APK...");
+                listener.onLog("[6/6] Merakit paket APK...");
 
                 File unalignedApk = new File(buildDir, "app-unaligned.apk");
-                packageApk(unsignedApk, classesDex, unalignedApk, project, listener);
+                packageApk(unsignedApk, dexDir, unalignedApk, project, listener);
 
                 File alignedApk = new File(buildDir, "app-aligned.apk");
                 ZipAlignUtil.alignZip(unalignedApk, alignedApk);
 
-                // STEP 5: Sign APK
-                listener.onProgress(6, 6, "[5/5] Menandatangani APK...");
-                listener.onLog("[5/5] Menandatangani APK dengan keystore debug...");
+                // Sign APK
+                listener.onLog("[SIGN] Menandatangani APK dengan keystore debug...");
 
-                File outputDir = new File(context.getExternalFilesDir(null), "outputs");
+                File outputDir = (context != null && context.getExternalFilesDir(null) != null) ?
+                        new File(context.getExternalFilesDir(null), "outputs") :
+                        new File(buildDir, "dist");
                 outputDir.mkdirs();
                 File finalApk = new File(outputDir, project.getName() + "-release.apk");
 
@@ -163,14 +205,22 @@ public class ApkBuilderEngine {
                     keystoreFile = toolchain.getFile("keystore");
                 }
                 if (keystoreFile == null || !keystoreFile.exists() || keystoreFile.length() == 0) {
-                    keystoreFile = new File(context.getFilesDir(), "toolchain/debug.keystore");
+                    keystoreFile = new File(toolchainDir, "debug.keystore");
                 }
                 if (!keystoreFile.exists() || keystoreFile.length() == 0) {
-                    toolchain.extractAsset("debug.keystore", keystoreFile);
+                    File localKs = new File("debug.keystore");
+                    if (!localKs.exists()) localKs = new File("/home/hatch/workspace/apk-compiler/debug.keystore");
+                    if (localKs.exists()) keystoreFile = localKs;
                 }
 
                 String ksPass = toolchain.getKeystorePassword();
                 File apksignerTool = toolchain.getFile("apksigner");
+                if (apksignerTool == null || !apksignerTool.exists()) {
+                    File sdkSigner = new File("/home/hatch/android-sdk/build-tools/34.0.0/apksigner");
+                    if (sdkSigner.exists()) {
+                        apksignerTool = sdkSigner;
+                    }
+                }
                 boolean signOk = ApkSignerUtil.signApk(alignedApk, finalApk, keystoreFile,
                         ksPass, "androiddebugkey", ksPass, project.getMinSdk(), apksignerTool, listener::onLog);
 
@@ -199,9 +249,10 @@ public class ApkBuilderEngine {
     }
 
     private boolean runAapt2(Project project, File buildDir, File genDir, File unsignedApk,
-                            File aapt2Binary, File androidJar, BuildListener listener) {
+                            File aapt2Binary, File androidJar, DependencyManager.ResolutionResult depResult,
+                            BuildListener listener) {
         try {
-            // Siapkan default fallback resources jika ada resource standar (app_name, AppTheme, icon) yang dirujuk manifest
+            // Siapkan default fallback resources dengan style stubs untuk AppCompat & MaterialComponents
             File fallbackResDir = new File(buildDir, "fallback_res");
             File fallbackValues = new File(fallbackResDir, "values");
             File fallbackDrawable = new File(fallbackResDir, "drawable");
@@ -210,7 +261,8 @@ public class ApkBuilderEngine {
             fallbackDrawable.mkdirs();
             fallbackMipmap.mkdirs();
 
-            String defAppName = project.getName() != null ? project.getName() : "App";
+            // 1. defaults.xml
+            String defAppName = project.getName() != null ? SecurityAuditor.sanitizeXmlText(project.getName()) : "App";
             String defaultsXml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                     "<resources>\n" +
                     "    <string name=\"app_name\">" + defAppName + "</string>\n" +
@@ -219,6 +271,78 @@ public class ApkBuilderEngine {
             File defStrings = new File(fallbackValues, "defaults.xml");
             try (FileOutputStream fos = new FileOutputStream(defStrings)) {
                 fos.write(defaultsXml.getBytes("UTF-8"));
+            }
+
+            // 2. styles_compat.xml (Synthetic style stubs so AAPT2 linking never fails on AppCompat/Material themes)
+            String stylesCompatXml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                    "<resources>\n" +
+                    "    <!-- AppCompat Themes Fallback Stubs -->\n" +
+                    "    <style name=\"Theme.AppCompat\" parent=\"android:Theme.DeviceDefault\" />\n" +
+                    "    <style name=\"Theme.AppCompat.Light\" parent=\"android:Theme.DeviceDefault.Light\" />\n" +
+                    "    <style name=\"Theme.AppCompat.Light.DarkActionBar\" parent=\"android:Theme.DeviceDefault.Light.DarkActionBar\" />\n" +
+                    "    <style name=\"Theme.AppCompat.NoActionBar\" parent=\"android:Theme.DeviceDefault.NoActionBar\" />\n" +
+                    "    <style name=\"Theme.AppCompat.Light.NoActionBar\" parent=\"android:Theme.DeviceDefault.Light.NoActionBar\" />\n" +
+                    "    <style name=\"Theme.AppCompat.DayNight\" parent=\"android:Theme.DeviceDefault\" />\n" +
+                    "    <style name=\"Theme.AppCompat.DayNight.DarkActionBar\" parent=\"android:Theme.DeviceDefault.Light.DarkActionBar\" />\n" +
+                    "    <style name=\"Theme.AppCompat.DayNight.NoActionBar\" parent=\"android:Theme.DeviceDefault.NoActionBar\" />\n" +
+                    "    <style name=\"Theme.AppCompat.Dialog\" parent=\"android:Theme.DeviceDefault.Dialog\" />\n" +
+                    "    <style name=\"Theme.AppCompat.Light.Dialog\" parent=\"android:Theme.DeviceDefault.Light.Dialog\" />\n" +
+                    "    <style name=\"Theme.AppCompat.Dialog.Alert\" parent=\"android:Theme.DeviceDefault.Dialog\" />\n" +
+                    "    <style name=\"Theme.AppCompat.Light.Dialog.Alert\" parent=\"android:Theme.DeviceDefault.Light.Dialog\" />\n" +
+                    "    <style name=\"Theme.AppCompat.DialogWhenLarge\" parent=\"android:Theme.DeviceDefault.DialogWhenLarge\" />\n" +
+                    "    <style name=\"Theme.AppCompat.Light.DialogWhenLarge\" parent=\"android:Theme.DeviceDefault.Light.DialogWhenLarge\" />\n" +
+                    "    <style name=\"Theme.AppCompat.CompactMenu\" parent=\"android:Theme.DeviceDefault\" />\n" +
+                    "\n" +
+                    "    <!-- MaterialComponents Themes Fallback Stubs -->\n" +
+                    "    <style name=\"Theme.MaterialComponents\" parent=\"android:Theme.DeviceDefault\" />\n" +
+                    "    <style name=\"Theme.MaterialComponents.Light\" parent=\"android:Theme.DeviceDefault.Light\" />\n" +
+                    "    <style name=\"Theme.MaterialComponents.Light.DarkActionBar\" parent=\"android:Theme.DeviceDefault.Light.DarkActionBar\" />\n" +
+                    "    <style name=\"Theme.MaterialComponents.NoActionBar\" parent=\"android:Theme.DeviceDefault.NoActionBar\" />\n" +
+                    "    <style name=\"Theme.MaterialComponents.Light.NoActionBar\" parent=\"android:Theme.DeviceDefault.Light.NoActionBar\" />\n" +
+                    "    <style name=\"Theme.MaterialComponents.DayNight\" parent=\"android:Theme.DeviceDefault\" />\n" +
+                    "    <style name=\"Theme.MaterialComponents.DayNight.DarkActionBar\" parent=\"android:Theme.DeviceDefault.Light.DarkActionBar\" />\n" +
+                    "    <style name=\"Theme.MaterialComponents.DayNight.NoActionBar\" parent=\"android:Theme.DeviceDefault.NoActionBar\" />\n" +
+                    "    <style name=\"Theme.MaterialComponents.Dialog\" parent=\"android:Theme.DeviceDefault.Dialog\" />\n" +
+                    "    <style name=\"Theme.MaterialComponents.Light.Dialog\" parent=\"android:Theme.DeviceDefault.Light.Dialog\" />\n" +
+                    "    <style name=\"Theme.MaterialComponents.BottomSheetDialog\" parent=\"android:Theme.DeviceDefault.Dialog\" />\n" +
+                    "</resources>\n";
+            File defStyles = new File(fallbackValues, "styles_compat.xml");
+            try (FileOutputStream fos = new FileOutputStream(defStyles)) {
+                fos.write(stylesCompatXml.getBytes("UTF-8"));
+            }
+
+            // 3. attrs_compat.xml (Common attributes for AppCompat and Material)
+            String attrsCompatXml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                    "<resources>\n" +
+                    "    <attr name=\"colorPrimary\" format=\"color|reference\" />\n" +
+                    "    <attr name=\"colorPrimaryDark\" format=\"color|reference\" />\n" +
+                    "    <attr name=\"colorAccent\" format=\"color|reference\" />\n" +
+                    "    <attr name=\"colorSecondary\" format=\"color|reference\" />\n" +
+                    "    <attr name=\"colorButtonNormal\" format=\"color|reference\" />\n" +
+                    "    <attr name=\"colorControlNormal\" format=\"color|reference\" />\n" +
+                    "    <attr name=\"colorControlActivated\" format=\"color|reference\" />\n" +
+                    "    <attr name=\"colorControlHighlight\" format=\"color|reference\" />\n" +
+                    "    <attr name=\"title\" format=\"string|reference\" />\n" +
+                    "    <attr name=\"subtitle\" format=\"string|reference\" />\n" +
+                    "    <attr name=\"alpha\" format=\"float\" />\n" +
+                    "    <attr name=\"showAsAction\">\n" +
+                    "        <flag name=\"never\" value=\"0\" />\n" +
+                    "        <flag name=\"ifRoom\" value=\"1\" />\n" +
+                    "        <flag name=\"always\" value=\"2\" />\n" +
+                    "        <flag name=\"withText\" value=\"4\" />\n" +
+                    "        <flag name=\"collapseActionView\" value=\"8\" />\n" +
+                    "    </attr>\n" +
+                    "    <attr name=\"actionLayout\" format=\"reference\" />\n" +
+                    "    <attr name=\"actionViewClass\" format=\"string\" />\n" +
+                    "    <attr name=\"actionProviderClass\" format=\"string\" />\n" +
+                    "    <attr name=\"actionBarStyle\" format=\"reference\" />\n" +
+                    "    <attr name=\"actionBarSize\" format=\"dimension\" />\n" +
+                    "    <attr name=\"windowActionBar\" format=\"boolean\" />\n" +
+                    "    <attr name=\"windowNoTitle\" format=\"boolean\" />\n" +
+                    "</resources>\n";
+            File defAttrs = new File(fallbackValues, "attrs_compat.xml");
+            try (FileOutputStream fos = new FileOutputStream(defAttrs)) {
+                fos.write(attrsCompatXml.getBytes("UTF-8"));
             }
 
             String iconVector = "<vector xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
@@ -251,7 +375,7 @@ public class ApkBuilderEngine {
 
             File resZip = new File(buildDir, "res.zip");
             if (project.getResDir() != null && project.getResDir().exists()) {
-                listener.onLog("[AAPT2] Mengompilasi resource layout...");
+                listener.onLog("[AAPT2] Mengompilasi resource proyek...");
                 List<String> cmdCompile = Arrays.asList(
                         aapt2Binary.getAbsolutePath(), "compile",
                         "--dir", project.getResDir().getAbsolutePath(),
@@ -289,9 +413,37 @@ public class ApkBuilderEngine {
                 cmdLink.add(project.getPackageName());
             }
 
+            // Tambahkan extra packages dari AAR agar library R.java juga di-generate
+            if (depResult != null && !depResult.getExtraPackages().isEmpty()) {
+                StringBuilder extraPkgs = new StringBuilder();
+                for (String ep : depResult.getExtraPackages()) {
+                    if (!ep.equals(project.getPackageName())) {
+                        if (extraPkgs.length() > 0) extraPkgs.append(":");
+                        extraPkgs.append(ep);
+                    }
+                }
+                if (extraPkgs.length() > 0) {
+                    cmdLink.add("--extra-packages");
+                    cmdLink.add(extraPkgs.toString());
+                }
+            }
+
+            // Input dasar fallback stubs
             if (fallbackZip.exists() && fallbackZip.length() > 0) {
                 cmdLink.add(fallbackZip.getAbsolutePath());
             }
+
+            // Overlay resource dari semua AAR yang dideklarasikan
+            if (depResult != null) {
+                for (File aarRes : depResult.getAarResZips()) {
+                    if (aarRes.exists() && aarRes.length() > 0) {
+                        cmdLink.add("-R");
+                        cmdLink.add(aarRes.getAbsolutePath());
+                    }
+                }
+            }
+
+            // Overlay resource proyek aplikasi (diletakkan paling akhir agar mengambil prioritas tertinggi)
             if (resZip.exists() && resZip.length() > 0) {
                 cmdLink.add("-R");
                 cmdLink.add(resZip.getAbsolutePath());
@@ -320,7 +472,8 @@ public class ApkBuilderEngine {
 
         // Periksa apakah tag <manifest memiliki atribut package
         if (!content.matches("(?s).*<manifest[^>]*\\bpackage\\s*=[^>]*>.*")) {
-            String pkg = project.getPackageName() != null ? project.getPackageName() : "com.example.app";
+            String pkg = project.getPackageName() != null && SecurityAuditor.isValidPackageName(project.getPackageName())
+                    ? project.getPackageName() : "com.example.app";
             content = content.replaceFirst("<manifest\\b", "<manifest package=\"" + pkg + "\" ");
         }
 
@@ -332,52 +485,24 @@ public class ApkBuilderEngine {
         return linkManifest;
     }
 
-    private void generateFallbackResources(Project project, File genDir, File unsignedApk, BuildListener listener) throws IOException {
-        // Generate R.java dasar untuk paket aplikasi
-        String pkg = project.getPackageName();
-        String pkgPath = pkg.replace('.', '/');
-        File pkgDir = new File(genDir, pkgPath);
-        pkgDir.mkdirs();
-
-        File rJava = new File(pkgDir, "R.java");
-        StringBuilder sb = new StringBuilder();
-        sb.append("package ").append(pkg).append(";\n\n");
-        sb.append("public final class R {\n");
-        sb.append("    public static final class layout {\n");
-        sb.append("        public static final int activity_main = 0x7f030000;\n");
-        sb.append("    }\n");
-        sb.append("    public static final class id {\n");
-        sb.append("        public static final int main = 0x7f040000;\n");
-        sb.append("    }\n");
-        sb.append("    public static final class string {\n");
-        sb.append("        public static final int app_name = 0x7f050000;\n");
-        sb.append("    }\n");
-        sb.append("}\n");
-
-        FileOutputStream fos = new FileOutputStream(rJava);
-        fos.write(sb.toString().getBytes("UTF-8"));
-        fos.close();
-        listener.onLog("[FALLBACK] R.java berhasil dibuat di " + rJava.getName());
-
-        // Buat minimal unsigned APK base zip dengan AndroidManifest
-        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(unsignedApk));
-        ZipEntry manifestEntry = new ZipEntry("AndroidManifest.xml");
-        zos.putNextEntry(manifestEntry);
-        FileInputStream fis = new FileInputStream(project.getManifestFile());
-        byte[] buf = new byte[4096];
-        int len;
-        while ((len = fis.read(buf)) != -1) {
-            zos.write(buf, 0, len);
-        }
-        fis.close();
-        zos.closeEntry();
-        zos.close();
-    }
-
     private boolean compileJavaSources(Project project, List<File> javaFiles, File objDir,
-                                      File androidJar, BuildListener listener) {
+                                      File androidJar, DependencyManager.ResolutionResult depResult,
+                                      BuildListener listener) {
         try {
-            String cp = androidJar != null && androidJar.exists() ? androidJar.getAbsolutePath() : "";
+            StringBuilder cpBuilder = new StringBuilder();
+            if (androidJar != null && androidJar.exists()) {
+                cpBuilder.append(androidJar.getAbsolutePath());
+            }
+
+            // Tambahkan classpath dari semua dependency AAR & JAR yang di-resolve
+            if (depResult != null) {
+                for (File dj : depResult.getClasspathJars()) {
+                    if (dj.exists() && dj.length() > 0) {
+                        if (cpBuilder.length() > 0) cpBuilder.append(File.pathSeparator);
+                        cpBuilder.append(dj.getAbsolutePath());
+                    }
+                }
+            }
 
             // Tambahkan classpath dari libs jika ada
             File libsDir = new File(project.getRootDir(), "libs");
@@ -385,10 +510,13 @@ public class ApkBuilderEngine {
                 File[] jars = libsDir.listFiles((dir, name) -> name.endsWith(".jar"));
                 if (jars != null) {
                     for (File j : jars) {
-                        cp += (cp.isEmpty() ? "" : File.pathSeparator) + j.getAbsolutePath();
+                        if (cpBuilder.length() > 0) cpBuilder.append(File.pathSeparator);
+                        cpBuilder.append(j.getAbsolutePath());
                     }
                 }
             }
+
+            String cp = cpBuilder.toString();
 
             listener.onLog("[ECJ] Menyiapkan parameter kompilasi...");
             List<String> argsList = new ArrayList<>();
@@ -417,16 +545,29 @@ public class ApkBuilderEngine {
                 mainClass = Class.forName("org.eclipse.jdt.internal.compiler.batch.Main");
             } catch (ClassNotFoundException ignored) {}
 
-            // 2. Jika tidak ada di internal, coba muat dari toolchain ecj via DexClassLoader
+            // 2. Jika tidak ada di internal, coba muat dari toolchain ecj via DexClassLoader atau URLClassLoader
             if (mainClass == null) {
                 File ecjJar = toolchain.getFile("ecj");
+                if (ecjJar == null || !ecjJar.exists()) {
+                    File localEcj = new File("ecj.jar");
+                    if (!localEcj.exists()) localEcj = new File("/home/hatch/workspace/apk-compiler/ecj.jar");
+                    if (localEcj.exists()) ecjJar = localEcj;
+                }
                 if (ecjJar != null && ecjJar.exists()) {
-                    try {
-                        File optDir = context.getCodeCacheDir();
-                        dalvik.system.DexClassLoader dcl = new dalvik.system.DexClassLoader(
-                                ecjJar.getAbsolutePath(), optDir.getAbsolutePath(), null, context.getClassLoader());
-                        mainClass = dcl.loadClass("org.eclipse.jdt.internal.compiler.batch.Main");
-                    } catch (Throwable ignored) {}
+                    if (context != null) {
+                        try {
+                            File optDir = context.getCodeCacheDir();
+                            dalvik.system.DexClassLoader dcl = new dalvik.system.DexClassLoader(
+                                    ecjJar.getAbsolutePath(), optDir.getAbsolutePath(), null, context.getClassLoader());
+                            mainClass = dcl.loadClass("org.eclipse.jdt.internal.compiler.batch.Main");
+                        } catch (Throwable ignored) {}
+                    }
+                    if (mainClass == null) {
+                        try {
+                            URLClassLoader ucl = new URLClassLoader(new URL[]{ ecjJar.toURI().toURL() }, getClass().getClassLoader());
+                            mainClass = ucl.loadClass("org.eclipse.jdt.internal.compiler.batch.Main");
+                        } catch (Throwable ignored) {}
+                    }
                 }
             }
 
@@ -495,10 +636,19 @@ public class ApkBuilderEngine {
             java.util.Map cache = (java.util.Map) cacheField.get(null);
             if (cache != null) {
                 InputStream is = cl.getResourceAsStream("org/eclipse/jdt/internal/compiler/batch/messages.properties");
-                if (is == null) {
+                if (is == null && context != null) {
                     try {
                         is = context.getAssets().open("ecj/messages.properties");
                     } catch (Exception ignored) {}
+                }
+                if (is == null) {
+                    File localProps = new File("app/src/main/assets/ecj/messages.properties");
+                    if (!localProps.exists()) localProps = new File("/home/hatch/workspace/apk-compiler/app/src/main/assets/ecj/messages.properties");
+                    if (localProps.exists()) {
+                        try {
+                            is = new FileInputStream(localProps);
+                        } catch (Exception ignored) {}
+                    }
                 }
                 if (is != null) {
                     java.util.PropertyResourceBundle bundle = new java.util.PropertyResourceBundle(is);
@@ -512,7 +662,8 @@ public class ApkBuilderEngine {
     }
 
     private boolean compileDex(Project project, List<File> classFiles, File dexDir,
-                               File androidJar, BuildListener listener) {
+                               File androidJar, DependencyManager.ResolutionResult depResult,
+                               BuildListener listener) {
         try {
             List<String> argsList = new ArrayList<>();
             argsList.add("--min-api");
@@ -523,8 +674,19 @@ public class ApkBuilderEngine {
                 argsList.add("--lib");
                 argsList.add(androidJar.getAbsolutePath());
             }
+
+            // Tambahkan semua class file proyek
             for (File cf : classFiles) {
                 argsList.add(cf.getAbsolutePath());
+            }
+
+            // Tambahkan semua jar dependensi ke D8
+            if (depResult != null) {
+                for (File dj : depResult.getClasspathJars()) {
+                    if (dj.exists() && dj.length() > 0) {
+                        argsList.add(dj.getAbsolutePath());
+                    }
+                }
             }
 
             // 1. Cek apakah D8 tersedia langsung di ClassLoader aplikasi
@@ -533,16 +695,28 @@ public class ApkBuilderEngine {
                 d8Class = Class.forName("com.android.tools.r8.D8");
             } catch (ClassNotFoundException ignored) {}
 
-            // 2. Jika tidak ada di internal, coba muat dari toolchain d8 via DexClassLoader
+            // 2. Jika tidak ada di internal, coba muat dari toolchain d8 via DexClassLoader atau URLClassLoader
             if (d8Class == null) {
                 File d8Jar = toolchain.getFile("d8");
+                if (d8Jar == null || !d8Jar.exists()) {
+                    File sdkD8 = new File("/home/hatch/android-sdk/build-tools/34.0.0/lib/d8.jar");
+                    if (sdkD8.exists()) d8Jar = sdkD8;
+                }
                 if (d8Jar != null && d8Jar.exists()) {
-                    try {
-                        File optDir = context.getCodeCacheDir();
-                        dalvik.system.DexClassLoader dcl = new dalvik.system.DexClassLoader(
-                                d8Jar.getAbsolutePath(), optDir.getAbsolutePath(), null, context.getClassLoader());
-                        d8Class = dcl.loadClass("com.android.tools.r8.D8");
-                    } catch (Throwable ignored) {}
+                    if (context != null) {
+                        try {
+                            File optDir = context.getCodeCacheDir();
+                            dalvik.system.DexClassLoader dcl = new dalvik.system.DexClassLoader(
+                                    d8Jar.getAbsolutePath(), optDir.getAbsolutePath(), null, context.getClassLoader());
+                            d8Class = dcl.loadClass("com.android.tools.r8.D8");
+                        } catch (Throwable ignored) {}
+                    }
+                    if (d8Class == null) {
+                        try {
+                            URLClassLoader ucl = new URLClassLoader(new URL[]{ d8Jar.toURI().toURL() }, getClass().getClassLoader());
+                            d8Class = ucl.loadClass("com.android.tools.r8.D8");
+                        } catch (Throwable ignored) {}
+                    }
                 }
             }
 
@@ -554,8 +728,9 @@ public class ApkBuilderEngine {
             }
 
             // Fallback CLI d8
+            File cliD8 = new File("/home/hatch/android-sdk/build-tools/34.0.0/d8");
             List<String> cmd = new ArrayList<>();
-            cmd.add("d8");
+            cmd.add(cliD8.exists() ? cliD8.getAbsolutePath() : "d8");
             cmd.addAll(argsList);
             int code = runProcess(cmd, listener);
             return code == 0 && new File(dexDir, "classes.dex").exists();
@@ -566,7 +741,7 @@ public class ApkBuilderEngine {
         }
     }
 
-    private void packageApk(File unsignedBaseApk, File classesDex, File destApk,
+    private void packageApk(File unsignedBaseApk, File dexDir, File destApk,
                             Project project, BuildListener listener) throws IOException {
         ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(destApk)));
         byte[] buf = new byte[8192];
@@ -577,7 +752,7 @@ public class ApkBuilderEngine {
             Enumeration<? extends ZipEntry> entries = baseZip.entries();
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
-                if (entry.getName().equals("classes.dex")) continue;
+                if (entry.getName().startsWith("classes") && entry.getName().endsWith(".dex")) continue;
 
                 ZipEntry newEntry = new ZipEntry(entry.getName());
                 if (entry.getMethod() == ZipEntry.STORED) {
@@ -587,33 +762,39 @@ public class ApkBuilderEngine {
                     newEntry.setCrc(entry.getCrc());
                 }
                 zos.putNextEntry(newEntry);
-                InputStream is = baseZip.getInputStream(entry);
-                int r;
-                while ((r = is.read(buf)) != -1) {
-                    zos.write(buf, 0, r);
+                try (InputStream is = baseZip.getInputStream(entry)) {
+                    int r;
+                    while ((r = is.read(buf)) != -1) {
+                        zos.write(buf, 0, r);
+                    }
                 }
-                is.close();
                 zos.closeEntry();
             }
             baseZip.close();
         }
 
-        // 2. Masukkan classes.dex
-        ZipEntry dexEntry = new ZipEntry("classes.dex");
-        zos.putNextEntry(dexEntry);
-        FileInputStream dexIs = new FileInputStream(classesDex);
-        int r;
-        while ((r = dexIs.read(buf)) != -1) {
-            zos.write(buf, 0, r);
+        // 2. Masukkan semua classes*.dex (multidex support)
+        File[] dexFiles = dexDir.listFiles((d, n) -> n.startsWith("classes") && n.endsWith(".dex"));
+        if (dexFiles != null && dexFiles.length > 0) {
+            Arrays.sort(dexFiles, (f1, f2) -> f1.getName().compareTo(f2.getName()));
+            for (File df : dexFiles) {
+                ZipEntry dexEntry = new ZipEntry(df.getName());
+                zos.putNextEntry(dexEntry);
+                try (FileInputStream dexIs = new FileInputStream(df)) {
+                    int r;
+                    while ((r = dexIs.read(buf)) != -1) {
+                        zos.write(buf, 0, r);
+                    }
+                }
+                zos.closeEntry();
+            }
         }
-        dexIs.close();
-        zos.closeEntry();
 
-        // 3. Masukkan assets jika ada
+        // 3. Masukkan assets jika ada (dengan validasi sandbox agar tidak membocorkan data privat)
         File assetsDir = new File(project.getRootDir(), "app/src/main/assets");
         if (!assetsDir.exists()) assetsDir = new File(project.getRootDir(), "assets");
         if (assetsDir.exists() && assetsDir.isDirectory()) {
-            addFolderToZip(assetsDir, "assets", zos, buf);
+            addFolderToZip(assetsDir, "assets", zos, buf, project.getRootDir());
         }
 
         zos.finish();
@@ -621,13 +802,19 @@ public class ApkBuilderEngine {
         zos.close();
     }
 
-    private void addFolderToZip(File folder, String parentPath, ZipOutputStream zos, byte[] buf) throws IOException {
+    private void addFolderToZip(File folder, String parentPath, ZipOutputStream zos, byte[] buf, File sandboxRoot) throws IOException {
+        String canonicalRoot = sandboxRoot.getCanonicalPath();
         File[] files = folder.listFiles();
         if (files == null) return;
         for (File f : files) {
+            String canonicalFile = f.getCanonicalPath();
+            if (!canonicalFile.startsWith(canonicalRoot + File.separator) && !canonicalFile.equals(canonicalRoot)) {
+                throw new SecurityException("Pelanggaran Sandbox: File '" + f.getName() + "' berada di luar direktori proyek dan tidak boleh dimasukkan ke APK.");
+            }
+
             String entryPath = parentPath + "/" + f.getName();
             if (f.isDirectory()) {
-                addFolderToZip(f, entryPath, zos, buf);
+                addFolderToZip(f, entryPath, zos, buf, sandboxRoot);
             } else {
                 ZipEntry entry = new ZipEntry(entryPath);
                 zos.putNextEntry(entry);
@@ -644,6 +831,18 @@ public class ApkBuilderEngine {
 
     private int runProcess(List<String> cmd, BuildListener listener) {
         try {
+            if (cmd == null || cmd.isEmpty()) {
+                throw new IllegalArgumentException("Perintah eksekusi kosong");
+            }
+            for (String arg : cmd) {
+                if (arg == null) {
+                    throw new IllegalArgumentException("Argumen eksekusi tidak boleh null");
+                }
+                if (arg.equals("/bin/sh") || arg.equals("sh") || arg.equals("/bin/bash") ||
+                    arg.equals("bash") || arg.equals("su")) {
+                    throw new SecurityException("Eksekusi shell interpreter interaktif dilarang demi keamanan");
+                }
+            }
             ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.redirectErrorStream(true);
             Process proc = pb.start();

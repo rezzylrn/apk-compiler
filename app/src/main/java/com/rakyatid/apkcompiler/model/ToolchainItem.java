@@ -39,9 +39,27 @@ public class ToolchainItem {
             } catch (Throwable ignored) {}
         }
 
-        if (targetFile != null && targetFile.exists() && targetFile.length() > 0) {
-            this.installed = true;
-            this.sizeBytes = targetFile.length();
+        if (targetFile != null && targetFile.exists()) {
+            if (targetFile.isDirectory()) {
+                File[] children = targetFile.listFiles();
+                if (children != null && children.length > 0) {
+                    this.installed = true;
+                    long total = 0;
+                    for (File c : children) {
+                        if (c.isFile()) total += c.length();
+                    }
+                    this.sizeBytes = total;
+                } else {
+                    this.installed = false;
+                    this.sizeBytes = 0;
+                }
+            } else if (targetFile.length() > 0) {
+                this.installed = true;
+                this.sizeBytes = targetFile.length();
+            } else {
+                this.installed = false;
+                this.sizeBytes = 0;
+            }
         } else {
             this.installed = false;
             this.sizeBytes = 0;

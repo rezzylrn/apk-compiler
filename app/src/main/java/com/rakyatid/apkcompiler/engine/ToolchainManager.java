@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.URL;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -31,7 +32,11 @@ public class ToolchainManager {
 
     public ToolchainManager(Context context) {
         this.context = context;
-        this.toolchainDir = new File(context.getFilesDir(), "toolchain");
+        if (context != null && context.getFilesDir() != null) {
+            this.toolchainDir = new File(context.getFilesDir(), "toolchain");
+        } else {
+            this.toolchainDir = new File(System.getProperty("user.home"), ".apkcompiler/toolchain");
+        }
         if (!toolchainDir.exists()) {
             toolchainDir.mkdirs();
         }
@@ -42,8 +47,9 @@ public class ToolchainManager {
         items.clear();
 
         // 1. AAPT2 Tool (Cek pre-bundled di nativeLibraryDir lebih dulu)
-        File nativeAapt2 = new File(context.getApplicationInfo().nativeLibraryDir, "libaapt2.so");
-        File aapt2File = nativeAapt2.exists() ? nativeAapt2 : new File(toolchainDir, "aapt2");
+        File nativeAapt2 = (context != null && context.getApplicationInfo() != null) ?
+                new File(context.getApplicationInfo().nativeLibraryDir, "libaapt2.so") : null;
+        File aapt2File = (nativeAapt2 != null && nativeAapt2.exists()) ? nativeAapt2 : new File(toolchainDir, "aapt2");
         items.add(new ToolchainItem(
                 "aapt2",
                 "AAPT2 Resource Compiler",
@@ -97,13 +103,30 @@ public class ToolchainManager {
                 null
         ));
 
-        // Pastikan keystore siap digunakan
+        // 6. AndroidX / AppCompat Essentials Pack
+        File androidxDir = new File(toolchainDir, "androidx");
+        items.add(new ToolchainItem(
+                "androidx",
+                "AndroidX / AppCompat Essentials",
+                "Paket pustaka inti AndroidX (AppCompat, Core, Fragment, Lifecycle, Resources) untuk proyek modern",
+                androidxDir,
+                "local_asset_or_download",
+                null
+        ));
+
+        // Pastikan keystore & androidx siap digunakan
         ensureKeystoreReady();
+        ensureAndroidxReady();
+    }
+
+    public void ensureAndroidxReady() {
+        DependencyManager.ensureEssentialsReady(toolchainDir, context, null);
     }
 
     public List<ToolchainItem> getItems() {
-        File nativeAapt2 = new File(context.getApplicationInfo().nativeLibraryDir, "libaapt2.so");
-        if (nativeAapt2.exists() && nativeAapt2.length() > 0) {
+        File nativeAapt2 = (context != null && context.getApplicationInfo() != null) ?
+                new File(context.getApplicationInfo().nativeLibraryDir, "libaapt2.so") : null;
+        if (nativeAapt2 != null && nativeAapt2.exists() && nativeAapt2.length() > 0) {
             for (int i = 0; i < items.size(); i++) {
                 if ("aapt2".equals(items.get(i).getId())) {
                     if (!items.get(i).getTargetFile().equals(nativeAapt2)) {
@@ -141,8 +164,9 @@ public class ToolchainManager {
 
     public File getFile(String id) {
         if ("aapt2".equals(id)) {
-            File nativeAapt2 = new File(context.getApplicationInfo().nativeLibraryDir, "libaapt2.so");
-            if (nativeAapt2.exists() && nativeAapt2.length() > 0) {
+            File nativeAapt2 = (context != null && context.getApplicationInfo() != null) ?
+                    new File(context.getApplicationInfo().nativeLibraryDir, "libaapt2.so") : null;
+            if (nativeAapt2 != null && nativeAapt2.exists() && nativeAapt2.length() > 0) {
                 return nativeAapt2;
             }
         }
@@ -173,6 +197,15 @@ public class ToolchainManager {
                     continue;
                 }
 
+                if ("androidx".equals(item.getId())) {
+                    listener.onProgress(item.getName(), 30, "Mengekstrak paket pustaka AndroidX Essentials...");
+                    boolean ok = DependencyManager.ensureEssentialsReady(toolchainDir, context, null);
+                    item.updateStatus();
+                    listener.onComponentInstalled(item.getName(), ok, ok ? "Berhasil dipasang" : "Gagal memasang paket AndroidX");
+                    if (!ok) overallSuccess = false;
+                    continue;
+                }
+
                 listener.onProgress(item.getName(), 10, "Mengunduh dari repositori...");
                 boolean ok = downloadFile(item.getDownloadUrl(), item.getTargetFile(), item.getExpectedSha256(), (percent, status) -> {
                     listener.onProgress(item.getName(), percent, status);
@@ -197,27 +230,46 @@ public class ToolchainManager {
     private boolean downloadFile(String fileUrl, File destFile, String expectedSha256, DownloadProgress progress) {
         File tempFile = null;
         try {
+            if (fileUrl == null || !fileUrl.startsWith("https://")) {
+                throw new SecurityException("Hanya URL HTTPS yang diizinkan untuk mengunduh toolchain!");
+            }
+
             destFile.getParentFile().mkdirs();
             tempFile = new File(destFile.getAbsolutePath() + ".tmp");
             if (tempFile.exists()) tempFile.delete();
 
             URL url = new URL(fileUrl);
+            InetAddress[] addresses = InetAddress.getAllByName(url.getHost());
+            for (InetAddress addr : addresses) {
+                if (SecurityAuditor.isPrivateOrReservedIp(addr)) {
+                    throw new SecurityException("SSRF terdeteksi: Alamat IP internal diblokir (" + addr.getHostAddress() + ")");
+                }
+            }
+
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestProperty("User-Agent", "ApkCompiler-Android/1.0");
             conn.setConnectTimeout(15000);
             conn.setReadTimeout(30000);
-            conn.setInstanceFollowRedirects(true);
+            conn.setInstanceFollowRedirects(false);
 
             int status = conn.getResponseCode();
-            if (status != HttpURLConnection.HTTP_OK) {
-                if (status == 301 || status == 302 || status == 307 || status == 308) {
-                    String redirected = conn.getHeaderField("Location");
-                    conn.disconnect();
-                    conn = (HttpURLConnection) new URL(redirected).openConnection();
-                    conn.setRequestProperty("User-Agent", "ApkCompiler-Android/1.0");
-                    conn.setConnectTimeout(15000);
-                    conn.setReadTimeout(30000);
+            if (status == 301 || status == 302 || status == 307 || status == 308) {
+                String redirected = conn.getHeaderField("Location");
+                conn.disconnect();
+                if (redirected == null || !redirected.startsWith("https://")) {
+                    throw new SecurityException("Pengalihan ke protokol non-HTTPS ditolak!");
                 }
+                URL redirUrl = new URL(redirected);
+                InetAddress[] redirAddresses = InetAddress.getAllByName(redirUrl.getHost());
+                for (InetAddress addr : redirAddresses) {
+                    if (SecurityAuditor.isPrivateOrReservedIp(addr)) {
+                        throw new SecurityException("SSRF terdeteksi pada redirect!");
+                    }
+                }
+                conn = (HttpURLConnection) redirUrl.openConnection();
+                conn.setRequestProperty("User-Agent", "ApkCompiler-Android/1.0");
+                conn.setConnectTimeout(15000);
+                conn.setReadTimeout(30000);
             }
 
             long total = conn.getContentLengthLong();
@@ -320,6 +372,9 @@ public class ToolchainManager {
                 ks.store(fos, pass.toCharArray());
                 fos.flush();
             }
+            dest.setReadable(true, true);
+            dest.setWritable(true, true);
+            dest.setExecutable(false, false);
             return true;
         } catch (Exception e) {
             return false;

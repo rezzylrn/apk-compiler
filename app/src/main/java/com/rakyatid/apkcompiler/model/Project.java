@@ -1,6 +1,8 @@
 package com.rakyatid.apkcompiler.model;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Project {
     private final String name;
@@ -14,6 +16,7 @@ public class Project {
     private final int javaFilesCount;
     private final int resFilesCount;
     private final boolean valid;
+    private List<Dependency> dependencies = new ArrayList<>();
 
     public Project(String name, File rootDir, File manifestFile, File javaSrcDir, File resDir,
                    String packageName, int minSdk, int targetSdk, int javaFilesCount,
@@ -73,5 +76,19 @@ public class Project {
 
     public boolean isValid() {
         return valid;
+    }
+
+    public List<Dependency> getDependencies() {
+        return dependencies;
+    }
+
+    public void setDependencies(List<Dependency> dependencies) {
+        this.dependencies = dependencies != null ? dependencies : new ArrayList<>();
+    }
+
+    public void addDependency(Dependency dependency) {
+        if (dependency != null) {
+            this.dependencies.add(dependency);
+        }
     }
 }

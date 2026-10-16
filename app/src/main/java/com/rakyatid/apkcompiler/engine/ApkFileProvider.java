@@ -12,7 +12,16 @@ import android.provider.OpenableColumns;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Locale;
 
+/**
+ * Hardened ContentProvider for securely serving only compiled .apk files.
+ * Protects against:
+ * - Path traversal (../)
+ * - Symlink escapes to private databases, keystores, or shared preferences
+ * - Unauthorized file modification (strictly read-only)
+ * - Arbitrary file disclosure
+ */
 public class ApkFileProvider extends ContentProvider {
     public static final String AUTHORITY = "com.rakyatid.apkcompiler.fileprovider";
 
@@ -29,14 +38,21 @@ public class ApkFileProvider extends ContentProvider {
         return true;
     }
 
-    private File validateAndGetAllowedFile(Uri uri) throws FileNotFoundException {
+    public static File validateAndGetAllowedFile(Context ctx, Uri uri) throws FileNotFoundException {
+        if (uri == null) {
+            throw new FileNotFoundException("URI is null");
+        }
         String path = uri.getPath();
-        if (path == null) {
-            throw new FileNotFoundException("URI path is null");
+        if (path == null || path.trim().isEmpty()) {
+            throw new FileNotFoundException("URI path is null or empty");
+        }
+
+        // 1. Path traversal & null byte sanitization
+        if (path.contains("\0") || path.contains("..")) {
+            throw new SecurityException("Akses direktori ditolak: Path traversal atau karakter ilegal terdeteksi!");
         }
 
         File file = new File(path);
-        Context ctx = getContext();
         if (ctx == null) {
             throw new SecurityException("Provider context not available");
         }
@@ -49,19 +65,35 @@ public class ApkFileProvider extends ContentProvider {
             String canonicalExt = allowedExternal.getCanonicalPath();
             String canonicalInt = allowedInternal.getCanonicalPath();
 
+            // 2. Strict directory boundary enforcement
             boolean isWithinAllowed = canonicalTarget.startsWith(canonicalExt + File.separator) ||
                                      canonicalTarget.startsWith(canonicalInt + File.separator);
 
             if (!isWithinAllowed) {
-                throw new SecurityException("Akses direktori ditolak: Path traversal terdeteksi!");
+                throw new SecurityException("Akses direktori ditolak: Berkas berada di luar folder 'outputs/'!");
             }
 
-            if (!file.getName().endsWith(".apk")) {
-                throw new SecurityException("Akses ditolak: Hanya file .apk yang diizinkan!");
+            // 3. Blacklist checks against private data files
+            String lowerName = file.getName().toLowerCase(Locale.ROOT);
+            if (lowerName.endsWith(".keystore") || lowerName.endsWith(".jks") ||
+                lowerName.endsWith(".db") || lowerName.endsWith(".sqlite") ||
+                lowerName.endsWith(".xml") || lowerName.endsWith(".properties") ||
+                lowerName.contains("shared_prefs") || lowerName.contains("databases")) {
+                throw new SecurityException("Akses ditolak: File sensitif / internal tidak dapat diakses melalui FileProvider!");
             }
 
+            // 4. Strictly allow only .apk files
+            if (!lowerName.endsWith(".apk")) {
+                throw new SecurityException("Akses ditolak: Hanya file berekstensi .apk yang diizinkan!");
+            }
+
+            // 5. Verify existence and regular file status
             if (!file.exists()) {
                 throw new FileNotFoundException("File tidak ditemukan: " + file.getName());
+            }
+
+            if (!file.isFile()) {
+                throw new SecurityException("Akses ditolak: Target bukan file reguler!");
             }
 
             return file;
@@ -75,14 +107,14 @@ public class ApkFileProvider extends ContentProvider {
         if (!"r".equals(mode)) {
             throw new SecurityException("Hanya mode read-only (r) yang diizinkan");
         }
-        File file = validateAndGetAllowedFile(uri);
+        File file = validateAndGetAllowedFile(getContext(), uri);
         return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
     }
 
     @Override
     public String getType(Uri uri) {
-        String path = uri.getPath();
-        if (path != null && path.endsWith(".apk")) {
+        String path = uri != null ? uri.getPath() : null;
+        if (path != null && path.toLowerCase(Locale.ROOT).endsWith(".apk")) {
             return "application/vnd.android.package-archive";
         }
         return "application/octet-stream";
@@ -92,7 +124,7 @@ public class ApkFileProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         File file;
         try {
-            file = validateAndGetAllowedFile(uri);
+            file = validateAndGetAllowedFile(getContext(), uri);
         } catch (Exception e) {
             return null;
         }
@@ -117,16 +149,16 @@ public class ApkFileProvider extends ContentProvider {
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-        throw new UnsupportedOperationException("Insert not supported");
+        throw new SecurityException("Operasi penulisan / insert dilarang pada ApkFileProvider!");
     }
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
-        throw new UnsupportedOperationException("Delete not supported");
+        throw new SecurityException("Operasi penghapusan dilarang pada ApkFileProvider!");
     }
 
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
-        throw new UnsupportedOperationException("Update not supported");
+        throw new SecurityException("Operasi modifikasi / update dilarang pada ApkFileProvider!");
     }
 }
