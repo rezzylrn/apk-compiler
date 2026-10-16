@@ -102,6 +102,24 @@ public class ToolchainManager {
     }
 
     public List<ToolchainItem> getItems() {
+        File nativeAapt2 = new File(context.getApplicationInfo().nativeLibraryDir, "libaapt2.so");
+        if (nativeAapt2.exists() && nativeAapt2.length() > 0) {
+            for (int i = 0; i < items.size(); i++) {
+                if ("aapt2".equals(items.get(i).getId())) {
+                    if (!items.get(i).getTargetFile().equals(nativeAapt2)) {
+                        items.set(i, new ToolchainItem(
+                                "aapt2",
+                                "AAPT2 Resource Compiler",
+                                "Android Asset Packaging Tool v2 untuk mengompilasi resource layout & link AndroidManifest.xml",
+                                nativeAapt2,
+                                "prebundled_or_download",
+                                "be2cea61814678f7a9e61bf818a6666e6097a7d67d6c19498a4d7aa690bc4151"
+                        ));
+                    }
+                    break;
+                }
+            }
+        }
         for (ToolchainItem item : items) {
             item.updateStatus();
         }
@@ -122,6 +140,12 @@ public class ToolchainManager {
     }
 
     public File getFile(String id) {
+        if ("aapt2".equals(id)) {
+            File nativeAapt2 = new File(context.getApplicationInfo().nativeLibraryDir, "libaapt2.so");
+            if (nativeAapt2.exists() && nativeAapt2.length() > 0) {
+                return nativeAapt2;
+            }
+        }
         for (ToolchainItem item : items) {
             if (item.getId().equals(id)) {
                 return item.getTargetFile();

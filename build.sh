@@ -101,6 +101,7 @@ cp $OUT/unsigned.apk $OUT/app-unaligned.apk
 if [ -d $APP/jniLibs/arm64-v8a ]; then
   mkdir -p $OUT/stage/lib/arm64-v8a
   cp $APP/jniLibs/arm64-v8a/*.so $OUT/stage/lib/arm64-v8a/
+  chmod 755 $OUT/stage/lib/arm64-v8a/*.so
   (cd $OUT/stage && zip -q -0 -X ../app-unaligned.apk -r lib)
 fi
 

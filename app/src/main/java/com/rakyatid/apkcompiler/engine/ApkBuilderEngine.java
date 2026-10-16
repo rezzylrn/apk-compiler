@@ -82,13 +82,21 @@ public class ApkBuilderEngine {
                 File aapt2Binary = toolchain.getFile("aapt2");
 
                 boolean aapt2Success = false;
-                if (aapt2Binary != null && aapt2Binary.exists() && aapt2Binary.canExecute() && androidJar != null && androidJar.exists()) {
+                if (aapt2Binary != null && aapt2Binary.exists() && androidJar != null && androidJar.exists()) {
+                    try {
+                        aapt2Binary.setExecutable(true, false);
+                    } catch (Throwable ignored) {}
                     aapt2Success = runAapt2(project, buildDir, genDir, unsignedApk, aapt2Binary, androidJar, listener);
                 }
 
                 if (!aapt2Success) {
-                    listener.onLog("[WARN] AAPT2 biner tidak aktif/fallback: menghasilkan R.java dan base APK...");
-                    generateFallbackResources(project, genDir, unsignedApk, listener);
+                    if (aapt2Binary == null || !aapt2Binary.exists()) {
+                        throw new IOException("AAPT2 binary tidak ditemukan (" + (aapt2Binary != null ? aapt2Binary.getAbsolutePath() : "null") + "). Pastikan Toolchain telah terpasang.");
+                    } else if (androidJar == null || !androidJar.exists()) {
+                        throw new IOException("android.jar tidak ditemukan. Unduh platform SDK di tab Toolchain.");
+                    } else {
+                        throw new IOException("AAPT2 link gagal memproses resource/manifest. Periksa log kesalahan.");
+                    }
                 }
 
                 // STEP 2: Kompilasi Java (.java -> .class)
@@ -193,6 +201,54 @@ public class ApkBuilderEngine {
     private boolean runAapt2(Project project, File buildDir, File genDir, File unsignedApk,
                             File aapt2Binary, File androidJar, BuildListener listener) {
         try {
+            // Siapkan default fallback resources jika ada resource standar (app_name, AppTheme, icon) yang dirujuk manifest
+            File fallbackResDir = new File(buildDir, "fallback_res");
+            File fallbackValues = new File(fallbackResDir, "values");
+            File fallbackDrawable = new File(fallbackResDir, "drawable");
+            File fallbackMipmap = new File(fallbackResDir, "mipmap");
+            fallbackValues.mkdirs();
+            fallbackDrawable.mkdirs();
+            fallbackMipmap.mkdirs();
+
+            String defAppName = project.getName() != null ? project.getName() : "App";
+            String defaultsXml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                    "<resources>\n" +
+                    "    <string name=\"app_name\">" + defAppName + "</string>\n" +
+                    "    <style name=\"AppTheme\" parent=\"android:Theme.Material.Light.NoActionBar\" />\n" +
+                    "</resources>\n";
+            File defStrings = new File(fallbackValues, "defaults.xml");
+            try (FileOutputStream fos = new FileOutputStream(defStrings)) {
+                fos.write(defaultsXml.getBytes("UTF-8"));
+            }
+
+            String iconVector = "<vector xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+                    "    android:width=\"24dp\"\n" +
+                    "    android:height=\"24dp\"\n" +
+                    "    android:viewportWidth=\"24\"\n" +
+                    "    android:viewportHeight=\"24\">\n" +
+                    "  <path android:fillColor=\"#FF2196F3\" android:pathData=\"M12,2L2,22h20L12,2z\"/>\n" +
+                    "</vector>\n";
+            File defIcon = new File(fallbackDrawable, "ic_launcher.xml");
+            try (FileOutputStream fos = new FileOutputStream(defIcon)) {
+                fos.write(iconVector.getBytes("UTF-8"));
+            }
+            File defMipmapIcon = new File(fallbackMipmap, "ic_launcher.xml");
+            try (FileOutputStream fos = new FileOutputStream(defMipmapIcon)) {
+                fos.write(iconVector.getBytes("UTF-8"));
+            }
+            File defMipmapRound = new File(fallbackMipmap, "ic_launcher_round.xml");
+            try (FileOutputStream fos = new FileOutputStream(defMipmapRound)) {
+                fos.write(iconVector.getBytes("UTF-8"));
+            }
+
+            File fallbackZip = new File(buildDir, "fallback_res.zip");
+            List<String> cmdCompileFallback = Arrays.asList(
+                    aapt2Binary.getAbsolutePath(), "compile",
+                    "--dir", fallbackResDir.getAbsolutePath(),
+                    "-o", fallbackZip.getAbsolutePath()
+            );
+            runProcess(cmdCompileFallback, listener);
+
             File resZip = new File(buildDir, "res.zip");
             if (project.getResDir() != null && project.getResDir().exists()) {
                 listener.onLog("[AAPT2] Mengompilasi resource layout...");
@@ -202,7 +258,9 @@ public class ApkBuilderEngine {
                         "-o", resZip.getAbsolutePath()
                 );
                 int r1 = runProcess(cmdCompile, listener);
-                if (r1 != 0) return false;
+                if (r1 != 0) {
+                    listener.onLog("[WARN] Kompilasi resource proyek gagal, mencoba overlay fallback...");
+                }
             }
 
             listener.onLog("[AAPT2] Menautkan manifest dan resource...");
@@ -230,12 +288,17 @@ public class ApkBuilderEngine {
                 cmdLink.add("--custom-package");
                 cmdLink.add(project.getPackageName());
             }
-            if (resZip.exists()) {
+
+            if (fallbackZip.exists() && fallbackZip.length() > 0) {
+                cmdLink.add(fallbackZip.getAbsolutePath());
+            }
+            if (resZip.exists() && resZip.length() > 0) {
+                cmdLink.add("-R");
                 cmdLink.add(resZip.getAbsolutePath());
             }
 
             int r2 = runProcess(cmdLink, listener);
-            return r2 == 0;
+            return r2 == 0 && unsignedApk.exists() && unsignedApk.length() > 0;
         } catch (Exception e) {
             listener.onLog("[AAPT2 ERROR] " + e.getMessage());
             return false;
@@ -517,6 +580,12 @@ public class ApkBuilderEngine {
                 if (entry.getName().equals("classes.dex")) continue;
 
                 ZipEntry newEntry = new ZipEntry(entry.getName());
+                if (entry.getMethod() == ZipEntry.STORED) {
+                    newEntry.setMethod(ZipEntry.STORED);
+                    newEntry.setSize(entry.getSize());
+                    newEntry.setCompressedSize(entry.getSize());
+                    newEntry.setCrc(entry.getCrc());
+                }
                 zos.putNextEntry(newEntry);
                 InputStream is = baseZip.getInputStream(entry);
                 int r;
