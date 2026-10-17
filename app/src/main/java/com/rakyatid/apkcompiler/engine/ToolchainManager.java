@@ -6,8 +6,10 @@ import com.rakyatid.apkcompiler.model.ToolchainItem;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
@@ -125,9 +127,35 @@ public class ToolchainManager {
                 null
         ));
 
-        // Pastikan keystore & androidx siap digunakan
+        // Pastikan keystore, androidx & compiler-api siap digunakan
         ensureKeystoreReady();
         ensureAndroidxReady();
+        ensureCompilerApiReady();
+    }
+
+    public void ensureCompilerApiReady() {
+        File apiJar = new File(toolchainDir, "java-compiler-api.jar");
+        if (!apiJar.exists() || apiJar.length() == 0) {
+            extractAsset("java-compiler-api.jar", apiJar);
+        }
+        if (!apiJar.exists() || apiJar.length() == 0) {
+            File localJar = new File("java-compiler-api.jar");
+            if (!localJar.exists()) localJar = new File("/home/hatch/workspace/apk-compiler/java-compiler-api.jar");
+            if (localJar.exists()) {
+                copyFileQuick(localJar, apiJar);
+            }
+        }
+    }
+
+    private void copyFileQuick(File src, File dst) {
+        try (InputStream in = new FileInputStream(src);
+             OutputStream out = new FileOutputStream(dst)) {
+            byte[] buf = new byte[8192];
+            int r;
+            while ((r = in.read(buf)) != -1) {
+                out.write(buf, 0, r);
+            }
+        } catch (Exception ignored) {}
     }
 
     public List<String> getAvailablePlatformSdks() {

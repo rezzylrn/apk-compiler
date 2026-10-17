@@ -88,18 +88,23 @@ public class DependencyManager {
             }
         }
 
-        // 2. Scan local libs/ directories
+        // 2. Scan local libs/ directories and root directory for local jars/aars
         File[] libDirs = new File[]{
+                rootDir,
                 new File(rootDir, "libs"),
                 new File(rootDir, "app/libs")
         };
         for (File ld : libDirs) {
-            if (ld.exists() && ld.isDirectory()) {
+            if (ld != null && ld.exists() && ld.isDirectory()) {
                 File[] files = ld.listFiles((d, n) -> n.endsWith(".jar") || n.endsWith(".aar"));
                 if (files != null) {
                     for (File f : files) {
-                        deps.add(new Dependency(f));
-                        if (log != null) log.onLog("[DEP] Detected local library: " + f.getName());
+                        String absPath = f.getAbsolutePath();
+                        if (!seen.contains(absPath)) {
+                            seen.add(absPath);
+                            deps.add(new Dependency(f));
+                            if (log != null) log.onLog("[DEP] Detected local library: " + f.getName());
+                        }
                     }
                 }
             }

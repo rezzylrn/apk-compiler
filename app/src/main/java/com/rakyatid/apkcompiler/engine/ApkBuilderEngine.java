@@ -561,15 +561,24 @@ public class ApkBuilderEngine {
                 }
             }
 
-            // Tambahkan classpath dari libs jika ada
-            File libsDir = new File(project.getRootDir(), "libs");
-            if (libsDir.exists() && libsDir.isDirectory()) {
-                File[] jars = libsDir.listFiles((dir, name) -> name.endsWith(".jar"));
-                if (jars != null) {
-                    for (File j : jars) {
-                        if (j != null && j.exists() && j.length() > 0) {
-                            if (cpBuilder.length() > 0) cpBuilder.append(File.pathSeparator);
-                            cpBuilder.append(j.getAbsolutePath());
+            // Tambahkan classpath dari local jars jika ada (libs, app/libs, root)
+            File[] jarSearchDirs = new File[]{
+                    new File(project.getRootDir(), "libs"),
+                    new File(project.getRootDir(), "app/libs"),
+                    project.getRootDir()
+            };
+            for (File d : jarSearchDirs) {
+                if (d != null && d.exists() && d.isDirectory()) {
+                    File[] jars = d.listFiles((dir, name) -> name.endsWith(".jar"));
+                    if (jars != null) {
+                        for (File j : jars) {
+                            if (j != null && j.exists() && j.length() > 0) {
+                                String jPath = j.getAbsolutePath();
+                                if (!cpBuilder.toString().contains(jPath)) {
+                                    if (cpBuilder.length() > 0) cpBuilder.append(File.pathSeparator);
+                                    cpBuilder.append(jPath);
+                                }
+                            }
                         }
                     }
                 }
@@ -586,7 +595,12 @@ public class ApkBuilderEngine {
             argsList.add("UTF-8");
             if (androidJar != null && androidJar.exists()) {
                 argsList.add("-bootclasspath");
-                argsList.add(androidJar.getAbsolutePath());
+                File compilerApiJar = new File(toolchain.getToolchainDir(), "java-compiler-api.jar");
+                if (compilerApiJar.exists() && compilerApiJar.length() > 0) {
+                    argsList.add(androidJar.getAbsolutePath() + File.pathSeparator + compilerApiJar.getAbsolutePath());
+                } else {
+                    argsList.add(androidJar.getAbsolutePath());
+                }
             }
             if (!cp.isEmpty()) {
                 argsList.add("-cp");

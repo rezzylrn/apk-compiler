@@ -48,27 +48,39 @@ find $OUT/gen -name "*.java" > $OUT/sources.txt
 find $APP/java -name "*.java" >> $OUT/sources.txt
 cat $OUT/sources.txt
 javac -source 8 -target 8 -nowarn -encoding UTF-8 \
-  -cp $AJAR:$PROJ/apksig-clean.jar \
+  -cp $AJAR \
   -d $OUT/obj \
   @$OUT/sources.txt
 
-# Ensure java-compiler-api.jar is generated from OpenJDK java.compiler.jmod
-if [ ! -f $PROJ/java-compiler-api.jar ]; then
-  echo "[3.5/7] generating java-compiler-api.jar..."
-  python3 -c '
+# Ensure java-compiler-api.jar is generated from OpenJDK java.compiler.jmod and java.base.jmod (with lambda stubs)
+echo "[3.5/7] generating java-compiler-api.jar..."
+python3 -c '
 import zipfile, os
-jmod_path = "'$JAVA_HOME'/jmods/java.compiler.jmod"
+base_jmod = "'$JAVA_HOME'/jmods/java.base.jmod"
+compiler_jmod = "'$JAVA_HOME'/jmods/java.compiler.jmod"
 out_jar = "'$PROJ'/java-compiler-api.jar"
-with zipfile.ZipFile(jmod_path, "r") as jmod:
-    with zipfile.ZipFile(out_jar, "w") as out_z:
+with zipfile.ZipFile(out_jar, "w") as out_z:
+    with zipfile.ZipFile(compiler_jmod, "r") as jmod:
         for item in jmod.infolist():
             if item.filename.startswith("classes/") and item.filename.endswith(".class"):
                 rel_name = item.filename[len("classes/"):]
                 if rel_name == "module-info.class" or rel_name == "javax/lang/model/SourceVersion.class":
                     continue
                 out_z.writestr(rel_name, jmod.read(item.filename))
+    with zipfile.ZipFile(base_jmod, "r") as jmod:
+        for item in jmod.infolist():
+            if item.filename in [
+                "classes/java/lang/invoke/LambdaMetafactory.class",
+                "classes/java/lang/invoke/SerializedLambda.class",
+                "classes/java/lang/invoke/SerializedLambda$1.class",
+                "classes/java/lang/invoke/TypeDescriptor.class",
+                "classes/java/lang/invoke/TypeDescriptor$OfField.class",
+                "classes/java/lang/invoke/TypeDescriptor$OfMethod.class"
+            ]:
+                rel_name = item.filename[len("classes/"):]
+                out_z.writestr(rel_name, jmod.read(item.filename))
 '
-fi
+cp $PROJ/java-compiler-api.jar $APP/assets/java-compiler-api.jar
 
 # Ensure apksig-clean.jar is generated without Conscrypt / desktop native classes
 if [ ! -f $PROJ/apksig-clean.jar ]; then

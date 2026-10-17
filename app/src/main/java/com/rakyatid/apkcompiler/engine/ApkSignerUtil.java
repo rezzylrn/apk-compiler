@@ -3,6 +3,7 @@ package com.rakyatid.apkcompiler.engine;
 import android.util.Base64;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.*;
@@ -39,14 +40,14 @@ public class ApkSignerUtil {
             } catch (ClassNotFoundException ignored) {}
 
             if (apkSignerClass != null && keystoreFile != null && keystoreFile.exists()) {
-                callback.log("[SIGN] Membaca kunci dari keystore: " + keystoreFile.getName());
+                callback.log("[SIGN] Reading key from keystore: " + keystoreFile.getName());
                 KeyStore ks = loadKeyStore(keystoreFile, ksPass);
                 if (!ks.containsAlias(keyAlias)) {
                     Enumeration<String> aliases = ks.aliases();
                     if (aliases.hasMoreElements()) {
                         keyAlias = aliases.nextElement();
                     } else {
-                        callback.log("[SIGN ERROR] Keystore tidak memiliki alias kunci.");
+                        callback.log("[SIGN ERROR] Keystore does not contain any key alias.");
                         return false;
                     }
                 }
@@ -60,23 +61,27 @@ public class ApkSignerUtil {
 
                 int effectiveMinSdk = minSdk > 0 ? minSdk : 21;
                 callback.log("[SIGN] Signing APK via Google apksig (v1 + v2 + v3, minSdk=" + effectiveMinSdk + ")...");
-                com.android.apksig.ApkSigner.SignerConfig signerConfig =
-                        new com.android.apksig.ApkSigner.SignerConfig.Builder(
-                                keyAlias,
-                                privateKey,
-                                Collections.singletonList((X509Certificate) cert)
-                        ).build();
 
-                com.android.apksig.ApkSigner signer = new com.android.apksig.ApkSigner.Builder(Collections.singletonList(signerConfig))
-                        .setInputApk(inputApk)
-                        .setOutputApk(outputApk)
-                        .setMinSdkVersion(effectiveMinSdk)
-                        .setV1SigningEnabled(true)
-                        .setV2SigningEnabled(true)
-                        .setV3SigningEnabled(true)
-                        .build();
+                // Invoke com.android.apksig.ApkSigner via pure reflection so no compile-time dependency on apksig
+                Class<?> signerConfigBuilderClass = Class.forName("com.android.apksig.ApkSigner$SignerConfig$Builder");
+                Constructor<?> scbCtor = signerConfigBuilderClass.getConstructor(String.class, PrivateKey.class, List.class);
+                Object scb = scbCtor.newInstance(keyAlias, privateKey, Collections.singletonList((X509Certificate) cert));
+                Method scbBuild = signerConfigBuilderClass.getMethod("build");
+                Object signerConfig = scbBuild.invoke(scb);
 
-                signer.sign();
+                Class<?> apkSignerBuilderClass = Class.forName("com.android.apksig.ApkSigner$Builder");
+                Constructor<?> asbCtor = apkSignerBuilderClass.getConstructor(List.class);
+                Object asb = asbCtor.newInstance(Collections.singletonList(signerConfig));
+
+                apkSignerBuilderClass.getMethod("setInputApk", File.class).invoke(asb, inputApk);
+                apkSignerBuilderClass.getMethod("setOutputApk", File.class).invoke(asb, outputApk);
+                apkSignerBuilderClass.getMethod("setMinSdkVersion", int.class).invoke(asb, effectiveMinSdk);
+                apkSignerBuilderClass.getMethod("setV1SigningEnabled", boolean.class).invoke(asb, true);
+                apkSignerBuilderClass.getMethod("setV2SigningEnabled", boolean.class).invoke(asb, true);
+                apkSignerBuilderClass.getMethod("setV3SigningEnabled", boolean.class).invoke(asb, true);
+
+                Object signer = apkSignerBuilderClass.getMethod("build").invoke(asb);
+                apkSignerClass.getMethod("sign").invoke(signer);
 
                 if (outputApk.exists() && outputApk.length() > 0) {
                     callback.log("[SIGN] Official apksig signing succeeded (v1 + v2 + v3 verified).");
@@ -86,7 +91,7 @@ public class ApkSignerUtil {
 
             // 2. Cek apakah ada tool apksigner binary eksternal / CLI
             if (apksignerTool != null && apksignerTool.exists()) {
-                callback.log("[SIGN] Menjalankan apksigner CLI...");
+                callback.log("[SIGN] Running apksigner CLI...");
                 List<String> cmd = new ArrayList<>();
                 cmd.add(apksignerTool.getAbsolutePath());
                 cmd.add("sign");
@@ -112,7 +117,7 @@ public class ApkSignerUtil {
                 }
                 int code = proc.waitFor();
                 if (code == 0 && outputApk.exists() && outputApk.length() > 0) {
-                    callback.log("[SIGN] apksigner selesai.");
+                    callback.log("[SIGN] apksigner finished.");
                     return true;
                 }
             }
