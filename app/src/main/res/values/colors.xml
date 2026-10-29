@@ -1,33 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Calm, refined, eye-friendly modern dark palette (low contrast, no harsh neon) -->
-    <color name="bg_main">#12151B</color>
-    <color name="surface_card">#181C24</color>
-    <color name="surface_elevated">#202531</color>
-    <color name="surface_border">#262D3B</color>
+    <!-- Muted dark theme, low contrast. No white surfaces, no bright blue, no glow. -->
+    <color name="bg_main">#15181E</color>
+    <color name="bg_secondary">#1D222A</color>
+    <color name="surface_card">#1D222A</color>
+    <color name="surface_elevated">#232935</color>
+    <color name="surface_border">#2B323E</color>
+    <color name="surface_tint">#232A38</color>
 
-    <!-- Calmed primary accents -->
-    <color name="primary_accent">#4F7EE8</color>
-    <color name="primary_dark">#3B6AD4</color>
+    <!-- One muted accent -->
+    <color name="primary_accent">#6E86B3</color>
+    <color name="primary_dark">#5A729E</color>
 
-    <!-- Soft status accents -->
-    <color name="accent_green">#34D399</color>
-    <color name="accent_red">#F87171</color>
-    <color name="accent_yellow">#FBBF24</color>
-    <color name="accent_cyan">#38BDF8</color>
-    <color name="accent_indigo">#6366F1</color>
+    <!-- Status accents (muted, on dark tints) -->
+    <color name="accent_green">#7FB08A</color>
+    <color name="accent_green_bg">#1F2B22</color>
+    <color name="accent_red">#C07A7A</color>
+    <color name="accent_red_bg">#2B2122</color>
+    <color name="accent_yellow">#C2A36A</color>
+    <color name="accent_yellow_bg">#2A251A</color>
+    <color name="accent_cyan">#6E86B3</color>
+    <color name="accent_indigo">#7A8CA8</color>
 
-    <!-- Soft comfortable typography -->
-    <color name="text_primary">#E2E8F0</color>
-    <color name="text_secondary">#94A3B8</color>
-    <color name="text_muted">#64748B</color>
+    <!-- Typography: soft gray, never pure white -->
+    <color name="text_primary">#C7CFD9</color>
+    <color name="text_secondary">#8B95A5</color>
+    <color name="text_muted">#6B7482</color>
 
-    <!-- Calm terminal console -->
-    <color name="console_bg">#0E1117</color>
-    <color name="console_text">#A5D6A7</color>
+    <!-- Terminal console: same family as the rest, only slightly darker -->
+    <color name="console_bg">#10131A</color>
+    <color name="console_text">#8E99A8</color>
 
     <!-- Onboarding tour colors -->
-    <color name="tour_surface">#181C24</color>
-    <color name="tour_dot_active">#4F7EE8</color>
-    <color name="tour_dot_inactive">#2A3242</color>
+    <color name="tour_surface">#1D222A</color>
+    <color name="tour_dot_active">#6E86B3</color>
+    <color name="tour_dot_inactive">#3A414D</color>
+
+    <!-- Icon tints -->
+    <color name="icon_neutral">#8B95A5</color>
+    <color name="icon_accent">#7A8CA8</color>
 </resources>

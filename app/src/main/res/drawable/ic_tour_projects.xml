@@ -13,18 +13,18 @@
     <!-- Folder shape -->
     <path
         android:fillColor="#1E2332"
-        android:strokeColor="#6366F1"
+        android:strokeColor="#64748B"
         android:strokeWidth="1.6"
         android:strokeLineJoin="round"
         android:pathData="M20,20 L27,20 L30,23 L44,23 A2,2 0 0,1 46,25 L46,42 A2,2 0 0,1 44,44 L20,44 A2,2 0 0,1 18,42 L18,22 A2,2 0 0,1 20,20 Z" />
     <!-- Git Branch Line -->
     <path
-        android:strokeColor="#00E5FF"
+        android:strokeColor="#7A8CA8"
         android:strokeWidth="2.2"
         android:strokeLineCap="round"
         android:pathData="M26,28 L26,38 M26,33 C30,33 33,31 38,31" />
     <!-- Git Nodes -->
     <path
-        android:fillColor="#00E5FF"
+        android:fillColor="#7A8CA8"
         android:pathData="M26,28m-2.2,0a2.2,2.2 0 1,0 4.4,0a2.2,2.2 0 1,0 -4.4,0 M26,38m-2.2,0a2.2,2.2 0 1,0 4.4,0a2.2,2.2 0 1,0 -4.4,0 M38,31m-2.2,0a2.2,2.2 0 1,0 4.4,0a2.2,2.2 0 1,0 -4.4,0" />
 </vector>

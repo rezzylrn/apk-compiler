@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Clone GitHub Repository"
+        android:text="Clone repository"
         android:textColor="@color/text_primary"
         android:textSize="16sp"
         android:textStyle="bold" />
@@ -18,7 +18,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="Enter an Android repository URL to download and inspect on-device."
+        android:text="Paste a public GitHub repo URL."
         android:textColor="@color/text_secondary"
         android:textSize="12sp" />
 
@@ -48,7 +48,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:text="Branch (Optional, default: main)"
+        android:text="Branch (optional)"
         android:textColor="@color/text_muted"
         android:textSize="11sp" />
 
@@ -71,7 +71,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:text="SAMPLE REPOSITORY PRESETS:"
+        android:text="Samples"
         android:textColor="@color/text_muted"
         android:textSize="10sp"
         android:textStyle="bold" />
@@ -89,7 +89,7 @@
             android:layout_weight="1"
             android:layout_marginRight="4dp"
             android:background="@drawable/btn_secondary"
-            android:text="Flashlight (sanbeg)"
+            android:text="Flashlight"
             android:textAllCaps="false"
             android:textColor="@color/primary_accent"
             android:textSize="10sp" />
@@ -101,7 +101,7 @@
             android:layout_weight="1"
             android:layout_marginLeft="4dp"
             android:background="@drawable/btn_secondary"
-            android:text="Compass (iutinvg)"
+            android:text="Compass"
             android:textAllCaps="false"
             android:textColor="@color/primary_accent"
             android:textSize="10sp" />
@@ -151,9 +151,9 @@
             android:background="@drawable/btn_primary"
             android:paddingLeft="18dp"
             android:paddingRight="18dp"
-            android:text="Clone &amp; Open"
+            android:text="Clone"
             android:textAllCaps="false"
-            android:textColor="#FFFFFF"
+            android:textColor="#E8ECF1"
             android:textSize="12sp"
             android:textStyle="bold" />
     </LinearLayout>

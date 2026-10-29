@@ -6,18 +6,18 @@
     android:viewportHeight="24">
     <!-- Help circle outline -->
     <path
-        android:strokeColor="#00E5FF"
+        android:strokeColor="#7A8CA8"
         android:strokeWidth="1.8"
         android:strokeLineCap="round"
         android:pathData="M12,2A10,10 0 1,0 22,12A10,10 0 0,0 12,2Z" />
     <!-- Question mark -->
     <path
-        android:strokeColor="#00E5FF"
+        android:strokeColor="#7A8CA8"
         android:strokeWidth="1.8"
         android:strokeLineCap="round"
         android:pathData="M9.5,9a2.5,2.5 0 0,1 5,0c0,1.5 -2.5,2.5 -2.5,3.5" />
     <!-- Question dot -->
     <path
-        android:fillColor="#00E5FF"
+        android:fillColor="#7A8CA8"
         android:pathData="M12,16.5m-1,0a1,1 0 1,0 2,0a1,1 0 1,0 -2,0" />
 </vector>

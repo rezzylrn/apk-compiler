@@ -95,7 +95,7 @@
             android:paddingRight="20dp"
             android:text="Save"
             android:textAllCaps="false"
-            android:textColor="#FFFFFF"
+            android:textColor="#E8ECF1"
             android:textSize="12sp"
             android:textStyle="bold" />
     </LinearLayout>

@@ -4,106 +4,29 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-
-    <!-- Card Background with rounded squircle corners -->
     <path
-        android:fillColor="#161A24"
-        android:strokeColor="#00E5FF"
-        android:strokeWidth="1.6"
-        android:strokeLineJoin="round"
-        android:pathData="M 22,6 H 86 A 16,16 0 0 1 102,22 V 86 A 16,16 0 0 1 86,102 H 22 A 16,16 0 0 1 6,86 V 22 A 16,16 0 0 1 22,6 Z" />
-
-    <!-- Subtle Ambient Glows -->
+        android:fillColor="#262D38"
+        android:strokeColor="#343C49"
+        android:strokeWidth="1.5"
+        android:pathData="M24,8 H84 A16,16 0 0 1 100,24 V84 A16,16 0 0 1 84,100 H24 A16,16 0 0 1 8,84 V24 A16,16 0 0 1 24,8 Z" />
     <path
-        android:fillColor="#211E48"
-        android:pathData="M38,72 a24,24 0 1,0 48,0 a24,24 0 1,0 -48,0 Z" />
-    <path
-        android:fillColor="#0E3347"
-        android:pathData="M70,36 a22,22 0 1,0 44,0 a22,22 0 1,0 -44,0 Z" />
-
-    <!-- Top Cavity & Rim -->
-    <path
-        android:fillColor="#161C2A"
-        android:strokeColor="#00E5FF"
-        android:strokeWidth="0.8"
-        android:strokeLineJoin="round"
-        android:pathData="M54.00,35.00 L72.19,46.50 L54.00,57.00 L35.81,46.50 Z" />
-
-    <!-- Inner Cavity -->
-    <path
-        android:fillColor="#0A0D14"
-        android:pathData="M54.00,38.74 L69.09,48.29 L54.00,54.32 L38.91,48.29 Z" />
-
-    <!-- Android Antennae -->
-    <path
-        android:strokeColor="#00C8E6"
-        android:strokeWidth="1.8"
-        android:strokeLineCap="round"
-        android:pathData="M49.81,42.01 L46.13,34.46" />
-    <path
-        android:strokeColor="#50F5FF"
-        android:strokeWidth="1.8"
-        android:strokeLineCap="round"
-        android:pathData="M58.19,42.01 L61.87,34.46" />
-
-    <!-- Android Mascot Dome -->
-    <path
-        android:fillColor="#00A5CD"
-        android:pathData="M45.27,45.56 a8.73,5.46 0 1,0 17.46,0 a8.73,5.46 0 1,0 -17.46,0 Z" />
-    <!-- 3D Dome Highlight -->
-    <path
-        android:fillColor="#50F5FF"
-        android:pathData="M48.00,44.50 a6.0,3.6 0 1,0 12.0,0 a6.0,3.6 0 1,0 -12.0,0 Z" />
-
-    <!-- Robot Eyes -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M48.9,45.56 a0.9,0.9 0 1,0 1.8,0 a0.9,0.9 0 1,0 -1.8,0 Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M57.3,45.56 a0.9,0.9 0 1,0 1.8,0 a0.9,0.9 0 1,0 -1.8,0 Z" />
-
-    <!-- Left Face (Indigo) -->
-    <path
-        android:fillColor="#4F46E5"
-        android:pathData="M35.81,46.50 L54.00,57.00 L54.00,79.00 L35.81,68.50 Z" />
-
-    <!-- Right Face (Cyan) -->
-    <path
-        android:fillColor="#00E5FF"
-        android:pathData="M54.00,57.00 L72.19,46.50 L72.19,68.50 L54.00,79.00 Z" />
-
-    <!-- Outer Edges & Rim -->
-    <path
-        android:strokeColor="#6366F1"
-        android:strokeWidth="0.8"
-        android:pathData="M35.81,46.50 L35.81,68.50 L54.00,79.00" />
-    <path
-        android:strokeColor="#00E5FF"
-        android:strokeWidth="0.8"
-        android:pathData="M72.19,46.50 L72.19,68.50 L54.00,79.00" />
-
-    <!-- Center Seam (Spine) -->
-    <path
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="1.0"
-        android:strokeLineCap="round"
-        android:pathData="M54.00,57.00 L54.00,79.00" />
-
-    <!-- Left Bracket '<' -->
-    <path
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:strokeColor="#8AA0C8"
+        android:strokeWidth="5"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M49.82,56.41 L43.45,61.91 L49.82,67.41" />
-
-    <!-- Right Bracket '>' -->
+        android:pathData="M48,42 L38,54 L48,66" />
     <path
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:strokeColor="#8AA0C8"
+        android:strokeWidth="5"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M58.18,56.41 L64.55,61.91 L58.18,67.41" />
-
+        android:pathData="M60,42 L70,54 L60,66" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#6B7E9E"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M56,40 L52,68" />
 </vector>

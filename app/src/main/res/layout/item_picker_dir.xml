@@ -11,14 +11,11 @@
     android:paddingLeft="12dp"
     android:paddingRight="12dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="[DIR]"
-        android:textColor="@color/primary_accent"
-        android:textSize="11sp"
-        android:textStyle="bold"
-        android:typeface="monospace" />
+    <ImageView
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:src="@drawable/ic_nav_folder"
+        android:contentDescription="Folder" />
 
     <TextView
         android:id="@+id/tv_picker_dir_name"

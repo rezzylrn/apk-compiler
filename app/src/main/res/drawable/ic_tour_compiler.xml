@@ -13,18 +13,18 @@
     <!-- Microchip/Core shape -->
     <path
         android:fillColor="#1A202E"
-        android:strokeColor="#00E5FF"
+        android:strokeColor="#7A8CA8"
         android:strokeWidth="1.8"
         android:strokeLineJoin="round"
         android:pathData="M23,23 L41,23 A2,2 0 0,1 43,25 L43,41 A2,2 0 0,1 41,43 L23,43 A2,2 0 0,1 21,41 L21,25 A2,2 0 0,1 23,23 Z" />
     <!-- Chip pins -->
     <path
-        android:strokeColor="#6366F1"
+        android:strokeColor="#64748B"
         android:strokeWidth="1.6"
         android:strokeLineCap="round"
         android:pathData="M26,19 L26,23 M32,19 L32,23 M38,19 L38,23 M26,43 L26,47 M32,43 L32,47 M38,43 L38,47 M17,26 L21,26 M17,32 L21,32 M17,38 L21,38 M43,26 L47,26 M43,32 L47,32 M43,38 L47,38" />
     <!-- Pipeline Flash / Gear Core -->
     <path
-        android:fillColor="#00E5FF"
+        android:fillColor="#7A8CA8"
         android:pathData="M34,26 L26,34 L31,34 L29,40 L38,32 L33,32 Z" />
 </vector>

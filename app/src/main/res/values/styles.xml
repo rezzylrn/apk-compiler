@@ -2,12 +2,13 @@
 <resources>
     <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/bg_main</item>
-        <item name="android:colorPrimary">@color/surface_card</item>
+        <item name="android:colorPrimary">@color/primary_accent</item>
         <item name="android:colorPrimaryDark">@color/bg_main</item>
         <item name="android:colorAccent">@color/primary_accent</item>
         <item name="android:statusBarColor">@color/bg_main</item>
         <item name="android:navigationBarColor">@color/bg_main</item>
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:editTextBackground">@drawable/edit_text_bg</item>
     </style>
 </resources>

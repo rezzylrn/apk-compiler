@@ -8,19 +8,17 @@
     <!-- Top App Bar -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:orientation="horizontal"
         android:paddingLeft="16dp"
         android:paddingRight="16dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="12dp"
         android:background="@color/surface_card"
         android:gravity="center_vertical">
 
         <ImageView
             android:id="@+id/iv_header_logo"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_marginEnd="12dp"
             android:layout_marginRight="12dp"
             android:src="@drawable/ic_app_logo"
@@ -37,14 +35,16 @@
                 android:layout_height="wrap_content"
                 android:text="APK Compiler"
                 android:textColor="@color/text_primary"
-                android:textSize="18sp"
+                android:textSize="16sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tv_header_subtitle"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Git Cloner &amp; On-Device Compiler"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:text="On-device Android compiler"
                 android:textColor="@color/text_muted"
                 android:textSize="11sp" />
         </LinearLayout>
@@ -58,30 +58,30 @@
             android:paddingRight="10dp"
             android:paddingTop="4dp"
             android:paddingBottom="4dp"
-            android:text="Toolchain Ready"
+            android:text="Ready"
             android:textColor="@color/accent_green"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
 
         <ImageButton
             android:id="@+id/btn_header_help"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_marginLeft="8dp"
             android:layout_marginStart="8dp"
             android:background="@drawable/btn_secondary"
-            android:padding="6dp"
+            android:padding="7dp"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_help_tour"
-            android:contentDescription="Help &amp; Tour Guide" />
+            android:contentDescription="Help" />
     </LinearLayout>
 
     <!-- Navigation Tabs -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="44dp"
+        android:layout_height="58dp"
         android:orientation="horizontal"
-        android:background="@color/surface_elevated"
+        android:background="@color/surface_card"
         android:weightSum="4">
 
         <TextView
@@ -89,10 +89,12 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:drawableTop="@drawable/ic_nav_folder"
+            android:drawablePadding="3dp"
             android:gravity="center"
             android:text="Projects"
             android:textColor="@color/primary_accent"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
 
         <TextView
@@ -100,36 +102,73 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:drawableTop="@drawable/ic_nav_build"
+            android:drawablePadding="3dp"
             android:gravity="center"
-            android:text="Compile"
+            android:text="Build"
             android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
+            android:textSize="12sp" />
 
         <TextView
             android:id="@+id/tab_toolchain"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:drawableTop="@drawable/ic_nav_download"
+            android:drawablePadding="3dp"
             android:gravity="center"
-            android:text="Toolchain"
+            android:text="Tools"
             android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
+            android:textSize="12sp" />
 
         <TextView
             android:id="@+id/tab_files"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:drawableTop="@drawable/ic_nav_file"
+            android:drawablePadding="3dp"
             android:gravity="center"
             android:text="Files"
             android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
+            android:textSize="12sp" />
     </LinearLayout>
 
-    <View
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/surface_border" />
+        android:layout_height="3dp"
+        android:orientation="horizontal"
+        android:background="@color/surface_border"
+        android:weightSum="4">
+
+        <View
+            android:id="@+id/tab_indicator_0"
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:background="@color/primary_accent" />
+
+        <View
+            android:id="@+id/tab_indicator_1"
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:background="@android:color/transparent" />
+
+        <View
+            android:id="@+id/tab_indicator_2"
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:background="@android:color/transparent" />
+
+        <View
+            android:id="@+id/tab_indicator_3"
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:background="@android:color/transparent" />
+    </LinearLayout>
 
     <!-- Tab Container -->
     <FrameLayout
@@ -137,7 +176,7 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <!-- ================= TAB 1: PROYEK ================= -->
+        <!-- ================= TAB 1: PROJECTS ================= -->
         <ScrollView
             android:id="@+id/view_tab_projects"
             android:layout_width="match_parent"
@@ -157,39 +196,59 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/card_bg"
                     android:orientation="vertical"
-                    android:padding="14dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="ACTIVE PROJECT"
-                        android:textColor="@color/primary_accent"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/tv_active_project_name"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="No project selected"
-                        android:textColor="@color/text_primary"
-                        android:textSize="17sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/tv_active_project_pkg"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="-"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
+                    android:padding="16dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <LinearLayout
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:background="@drawable/icon_tile_bg"
+                            android:gravity="center">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_nav_folder"
+                                android:contentDescription="Project" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginLeft="12dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tv_active_project_name"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="No project selected"
+                                android:textColor="@color/text_primary"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tv_active_project_pkg"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="-"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:layout_marginLeft="56dp"
                         android:orientation="horizontal"
                         android:weightSum="3">
 
@@ -201,9 +260,9 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Min/Target SDK"
+                                android:text="SDK"
                                 android:textColor="@color/text_muted"
-                                android:textSize="10sp" />
+                                android:textSize="11sp" />
                             <TextView
                                 android:id="@+id/tv_active_sdk"
                                 android:layout_width="wrap_content"
@@ -222,9 +281,9 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Java Files"
+                                android:text="Java"
                                 android:textColor="@color/text_muted"
-                                android:textSize="10sp" />
+                                android:textSize="11sp" />
                             <TextView
                                 android:id="@+id/tv_active_java_count"
                                 android:layout_width="wrap_content"
@@ -245,7 +304,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="Resources"
                                 android:textColor="@color/text_muted"
-                                android:textSize="10sp" />
+                                android:textSize="11sp" />
                             <TextView
                                 android:id="@+id/tv_active_res_count"
                                 android:layout_width="wrap_content"
@@ -268,24 +327,24 @@
                     <Button
                         android:id="@+id/btn_open_clone_dialog"
                         android:layout_width="0dp"
-                        android:layout_height="46dp"
+                        android:layout_height="48dp"
                         android:layout_weight="1"
                         android:layout_marginRight="6dp"
                         android:background="@drawable/btn_primary"
-                        android:text="Clone GitHub Repo"
+                        android:text="Clone repo"
                         android:textAllCaps="false"
-                        android:textColor="#FFFFFF"
+                        android:textColor="#E8ECF1"
                         android:textSize="13sp"
                         android:textStyle="bold" />
 
                     <Button
                         android:id="@+id/btn_open_folder_picker"
                         android:layout_width="0dp"
-                        android:layout_height="46dp"
+                        android:layout_height="48dp"
                         android:layout_weight="1"
                         android:layout_marginLeft="6dp"
                         android:background="@drawable/btn_secondary"
-                        android:text="Select Local Folder"
+                        android:text="Local folder"
                         android:textAllCaps="false"
                         android:textColor="@color/text_primary"
                         android:textSize="13sp" />
@@ -297,9 +356,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
                     android:layout_marginBottom="8dp"
-                    android:text="AVAILABLE PROJECTS"
-                    android:textColor="@color/text_muted"
-                    android:textSize="11sp"
+                    android:text="Projects"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
 
                 <LinearLayout
@@ -308,19 +367,34 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical" />
 
-                <TextView
-                    android:id="@+id/tv_empty_projects"
+                <LinearLayout
+                    android:id="@+id/layout_empty_projects"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:gravity="center"
-                    android:text="No projects found. Clone a GitHub repository or select a local project directory."
-                    android:textColor="@color/text_muted"
-                    android:textSize="13sp" />
+                    android:layout_marginTop="24dp"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@drawable/ic_nav_folder"
+                        android:contentDescription="No projects" />
+
+                    <TextView
+                        android:id="@+id/tv_empty_projects"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:text="No projects yet"
+                        android:textColor="@color/text_muted"
+                        android:textSize="13sp" />
+                </LinearLayout>
             </LinearLayout>
         </ScrollView>
 
-        <!-- ================= TAB 2: KOMPILASI ================= -->
+        <!-- ================= TAB 2: BUILD ================= -->
         <LinearLayout
             android:id="@+id/view_tab_build"
             android:layout_width="match_parent"
@@ -334,40 +408,39 @@
                 android:id="@+id/card_sdk_settings"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/card_bg"
                 android:orientation="vertical"
-                android:padding="12dp">
+                android:padding="14dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
                     <LinearLayout
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/icon_tile_bg"
+                        android:gravity="center">
+
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:src="@drawable/ic_tune"
+                            android:contentDescription="SDK settings" />
+                    </LinearLayout>
+
+                    <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="SDK &amp; TARGET CONFIGURATION"
-                            android:textColor="@color/accent_cyan"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/tv_sdk_config_summary"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
-                            android:text="Min: 21 • Target: 34 • Platform: Android 34"
-                            android:textColor="@color/text_primary"
-                            android:textSize="12sp" />
-                    </LinearLayout>
+                        android:layout_marginLeft="12dp"
+                        android:text="SDK"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
 
                     <Button
                         android:id="@+id/btn_open_sdk_settings"
@@ -376,10 +449,115 @@
                         android:background="@drawable/btn_secondary"
                         android:paddingLeft="12dp"
                         android:paddingRight="12dp"
-                        android:text="Configure SDK"
+                        android:text="Configure"
                         android:textAllCaps="false"
                         android:textColor="@color/text_primary"
                         android:textSize="12sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_sdk_config_summary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginLeft="52dp"
+                    android:ellipsize="end"
+                    android:singleLine="true"
+                    android:text="Min: 21 • Target: 34"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Pipeline stepper -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal"
+                android:weightSum="4">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal">
+                    <View
+                        android:id="@+id/pipeline_dot_1"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:background="@drawable/pipeline_dot_idle" />
+                    <TextView
+                        android:id="@+id/pipeline_label_1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Resources"
+                        android:textColor="@color/text_muted"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal">
+                    <View
+                        android:id="@+id/pipeline_dot_2"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:background="@drawable/pipeline_dot_idle" />
+                    <TextView
+                        android:id="@+id/pipeline_label_2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Java"
+                        android:textColor="@color/text_muted"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal">
+                    <View
+                        android:id="@+id/pipeline_dot_3"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:background="@drawable/pipeline_dot_idle" />
+                    <TextView
+                        android:id="@+id/pipeline_label_3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Dex"
+                        android:textColor="@color/text_muted"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal">
+                    <View
+                        android:id="@+id/pipeline_dot_4"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:background="@drawable/pipeline_dot_idle" />
+                    <TextView
+                        android:id="@+id/pipeline_label_4"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Sign"
+                        android:textColor="@color/text_muted"
+                        android:textSize="11sp" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -387,11 +565,11 @@
             <Button
                 android:id="@+id/btn_start_compile"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
+                android:layout_height="50dp"
                 android:background="@drawable/btn_primary"
-                android:text="Compile to APK"
+                android:text="Build APK"
                 android:textAllCaps="false"
-                android:textColor="#FFFFFF"
+                android:textColor="#E8ECF1"
                 android:textSize="14sp"
                 android:textStyle="bold" />
 
@@ -401,29 +579,31 @@
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="match_parent"
                 android:layout_height="6dp"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="12dp"
                 android:max="100"
                 android:progress="0"
+                android:progressTint="@color/primary_accent"
+                android:progressBackgroundTint="#2B323E"
                 android:visibility="gone" />
 
             <TextView
                 android:id="@+id/tv_build_step"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Status: Ready to compile"
+                android:layout_marginTop="6dp"
+                android:text="Ready"
                 android:textColor="@color/text_secondary"
-                android:textSize="11sp" />
+                android:textSize="12sp" />
 
             <!-- Output Success Card -->
             <LinearLayout
                 android:id="@+id/card_build_output"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="12dp"
                 android:background="@drawable/card_bg"
                 android:orientation="vertical"
-                android:padding="12dp"
+                android:padding="14dp"
                 android:visibility="gone">
 
                 <LinearLayout
@@ -432,13 +612,20 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_check_circle"
+                        android:contentDescription="Build ready" />
+
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="APK BUILD READY"
-                        android:textColor="@color/accent_green"
-                        android:textSize="11sp"
+                        android:layout_marginLeft="8dp"
+                        android:text="Build ready"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -446,49 +633,51 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="1.2 MB"
-                        android:textColor="@color/text_primary"
-                        android:textSize="11sp" />
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
                 </LinearLayout>
 
                 <TextView
                     android:id="@+id/tv_output_path"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="6dp"
+                    android:ellipsize="middle"
+                    android:singleLine="true"
                     android:text="/path/to/output.apk"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="@color/text_muted"
                     android:textSize="11sp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="12dp"
                     android:orientation="horizontal">
 
                     <Button
                         android:id="@+id/btn_install_apk"
                         android:layout_width="0dp"
-                        android:layout_height="38dp"
+                        android:layout_height="42dp"
                         android:layout_weight="1"
                         android:layout_marginRight="6dp"
                         android:background="@drawable/btn_success"
-                        android:text="Install APK"
+                        android:text="Install"
                         android:textAllCaps="false"
-                        android:textColor="#FFFFFF"
-                        android:textSize="12sp"
+                        android:textColor="#E8ECF1"
+                        android:textSize="13sp"
                         android:textStyle="bold" />
 
                     <Button
                         android:id="@+id/btn_share_apk"
                         android:layout_width="0dp"
-                        android:layout_height="38dp"
+                        android:layout_height="42dp"
                         android:layout_weight="1"
                         android:layout_marginLeft="6dp"
                         android:background="@drawable/btn_secondary"
-                        android:text="Share APK"
+                        android:text="Share"
                         android:textAllCaps="false"
                         android:textColor="@color/text_primary"
-                        android:textSize="12sp" />
+                        android:textSize="13sp" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -497,26 +686,25 @@
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="12dp"
                 android:background="@drawable/console_bg"
                 android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="32dp"
+                    android:layout_height="36dp"
                     android:orientation="horizontal"
-                    android:paddingLeft="10dp"
-                    android:paddingRight="10dp"
-                    android:background="#12151B"
+                    android:paddingLeft="12dp"
+                    android:paddingRight="12dp"
                     android:gravity="center_vertical">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="TERMINAL LOGS"
-                        android:textColor="@color/text_muted"
-                        android:textSize="10sp"
+                        android:text="Logs"
+                        android:textColor="#C7CFD9"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -524,15 +712,17 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Clear"
-                        android:textColor="@color/primary_accent"
-                        android:textSize="11sp" />
+                        android:textColor="#7A8CA8"
+                        android:textSize="12sp" />
                 </LinearLayout>
 
                 <ScrollView
                     android:id="@+id/scroll_console"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:padding="8dp">
+                    android:paddingLeft="12dp"
+                    android:paddingRight="12dp"
+                    android:paddingBottom="12dp">
 
                     <TextView
                         android:id="@+id/tv_console_log"
@@ -541,12 +731,12 @@
                         android:typeface="monospace"
                         android:textSize="11sp"
                         android:textColor="@color/console_text"
-                        android:text="[READY] System ready. Select a project and tap 'Compile to APK'.\n" />
+                        android:text="Ready. Select a project, then tap Build APK.\n" />
                 </ScrollView>
             </LinearLayout>
         </LinearLayout>
 
-        <!-- ================= TAB 3: TOOLCHAIN ================= -->
+        <!-- ================= TAB 3: TOOLS ================= -->
         <ScrollView
             android:id="@+id/view_tab_toolchain"
             android:layout_width="match_parent"
@@ -563,28 +753,28 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="TOOLCHAIN &amp; DEPENDENCY MANAGER"
-                    android:textColor="@color/primary_accent"
-                    android:textSize="11sp"
+                    android:text="Tools"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Compiler toolchain components can be downloaded and installed directly on-device without root privileges."
+                    android:text="Downloaded on-device. No root needed."
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
 
                 <Button
                     android:id="@+id/btn_install_toolchain"
                     android:layout_width="match_parent"
-                    android:layout_height="46dp"
+                    android:layout_height="48dp"
                     android:layout_marginTop="14dp"
                     android:background="@drawable/btn_primary"
-                    android:text="Install All Dependencies"
+                    android:text="Install all"
                     android:textAllCaps="false"
-                    android:textColor="#FFFFFF"
+                    android:textColor="#E8ECF1"
                     android:textSize="13sp"
                     android:textStyle="bold" />
 
@@ -593,17 +783,19 @@
                     style="?android:attr/progressBarStyleHorizontal"
                     android:layout_width="match_parent"
                     android:layout_height="6dp"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="12dp"
                     android:max="100"
+                    android:progressTint="@color/primary_accent"
+                    android:progressBackgroundTint="#2B323E"
                     android:visibility="gone" />
 
                 <TextView
                     android:id="@+id/tv_toolchain_status"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="6dp"
                     android:textColor="@color/text_secondary"
-                    android:textSize="11sp"
+                    android:textSize="12sp"
                     android:visibility="gone" />
 
                 <TextView
@@ -611,9 +803,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
                     android:layout_marginBottom="8dp"
-                    android:text="COMPONENT STATUS"
-                    android:textColor="@color/text_muted"
-                    android:textSize="11sp"
+                    android:text="Components"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
 
                 <LinearLayout
@@ -624,7 +816,7 @@
             </LinearLayout>
         </ScrollView>
 
-        <!-- ================= TAB 4: FILE EXPLORER ================= -->
+        <!-- ================= TAB 4: FILES ================= -->
         <LinearLayout
             android:id="@+id/view_tab_files"
             android:layout_width="match_parent"
@@ -642,14 +834,14 @@
                 <Button
                     android:id="@+id/btn_file_up"
                     android:layout_width="wrap_content"
-                    android:layout_height="36dp"
+                    android:layout_height="38dp"
                     android:background="@drawable/btn_secondary"
                     android:paddingLeft="12dp"
                     android:paddingRight="12dp"
-                    android:text="Up (..)"
+                    android:text="Up"
                     android:textAllCaps="false"
                     android:textColor="@color/text_primary"
-                    android:textSize="11sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tv_current_dir_path"
@@ -659,9 +851,9 @@
                     android:layout_marginLeft="10dp"
                     android:ellipsize="start"
                     android:singleLine="true"
-                    android:text="/path/project"
+                    android:text="-"
                     android:textColor="@color/text_secondary"
-                    android:textSize="11sp" />
+                    android:textSize="12sp" />
             </LinearLayout>
 
             <ScrollView

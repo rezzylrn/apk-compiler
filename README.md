@@ -2,6 +2,27 @@
 
 Aplikasi Android native mandiri untuk meng-clone repository proyek Android dari GitHub, memilih direktori lokal, mengelola dependensi build/toolchain (JDK, ECJ, D8, android.jar, AAPT2) langsung dari dalam aplikasi, dan mengompilasi proyek menjadi file APK siap install.
 
+## Preview
+
+<p>
+  <img src="screenshots/01-projects.jpg" width="170" alt="Tab Projects">
+  <img src="screenshots/02-build.jpg" width="170" alt="Tab Build, build selesai">
+  <img src="screenshots/03-tools.jpg" width="170" alt="Tab Tools">
+  <img src="screenshots/04-files.jpg" width="170" alt="Tab Files">
+  <img src="screenshots/05-editor.jpg" width="170" alt="Editor kode di dalam aplikasi">
+</p>
+
+## Cara Kerja
+
+![Ilustrasi cara kerja APK Compiler](screenshots/how-it-works.png)
+
+1. **Pilih proyek** — Clone repo GitHub, atau buka folder proyek lokal yang sudah ada di HP.
+2. **Project Scanner** — Baca `AndroidManifest.xml`, hitung file Java & resources, dan deteksi versi SDK.
+3. **Toolchain on-device** — AAPT2, ECJ, D8, apksig, dan AndroidX sudah di dalam aplikasi, tanpa root.
+4. **Pipeline 4 tahap** — Resources (aapt2) → Java (ECJ) → Dex (D8) → Sign (apksig).
+5. **Build di latar belakang** — Tutup aplikasi pun build tetap jalan; progresnya muncul di notifikasi HP.
+6. **APK siap install** — Hasilnya file `.apk`. Install langsung dari aplikasi, atau Share ke mana saja.
+
 ## Fitur Utama
 
 1. **GitHub Git Cloner**:
@@ -33,14 +54,18 @@ Aplikasi Android native mandiri untuk meng-clone repository proyek Android dari 
    - **Step 5: Sign APK** -> Menandatangani APK dengan keystore debug.
    - **Step 6: Output & Action** -> Tombol langsung **"Install APK"** (via `FileProvider`) dan **"Bagikan File"**.
 
-5. **Terminal Console & UI**:
-   - Antarmuka Material 3 Dark theme (obsidian `#0D0F12`, surface `#161920`, accent `#38BDF8` & `#22C55E`).
-   - Log terminal real-time dengan auto-scroll dan penanda status.
-   - Tanpa emoji dan tanpa AI-slop styling.
+5. **Terminal Console & UI (v1.3.1)**:
+   - Tema gelap kalem low-contrast: permukaan slate gelap, teks abu lembut (bukan putih), satu aksen biru baja yang diredam. Tanpa gradien, tanpa glow, tanpa emoji. v1.3.0 yang putih terang sudah diganti karena terlalu kontras.
+   - Logo baru: mark `</>` satu warna biru baja di atas kotak slate gelap, tanpa kartu putih dan tanpa biru terang.
+   - Tab berikon (Projects, Build, Tools, Files) dengan indikator tab aktif.
+   - Stepper pipeline visual: Resources, Java, Dex, Sign.
+   - Kartu proyek dan komponen toolchain berikon, teks dipangkas ke yang perlu saja. Placement diperbaiki: header tinggi tetap 56dp (subtitle satu baris), kartu proyek/SDK vertikal dengan statistik sejajar di bawah judul, tombol utama tanpa ikon di pinggir (teks rata tengah).
+   - Log terminal real-time dengan auto-scroll dan penanda status; baris yang sama persis tidak dicetak dua kali, dan tombol Install all tidak bisa ditekan dua kali bersamaan.
+   - **Build latar belakang**: kompilasi jalan lewat foreground service, tetap jalan walau aplikasi ditutup, dengan progress bar di notifikasi. Buka lagi aplikasinya untuk melihat hasil; notifikasi selesai bisa diketuk untuk kembali ke aplikasi.
 
 ## Lokasi Artifact APK
 - Output build: `ApkCompiler.apk` (Root direktori proyek)
-- Ukuran: ~63 KB (Sangat ringan, modular, efisien)
+- Ukuran: ~14,9 MB (self-contained: ECJ, D8, apksig, AAPT2 statis, AndroidX essentials)
 
 ## Cara Build Ulang
 ```bash

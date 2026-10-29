@@ -17,7 +17,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Select Project Folder"
+            android:text="Select folder"
             android:textColor="@color/text_primary"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -29,7 +29,7 @@
             android:background="@drawable/btn_secondary"
             android:paddingLeft="12dp"
             android:paddingRight="12dp"
-            android:text="Up (..)"
+            android:text="Up"
             android:textAllCaps="false"
             android:textColor="@color/text_primary"
             android:textSize="11sp" />
@@ -130,7 +130,7 @@
             android:paddingRight="18dp"
             android:text="Use This Folder"
             android:textAllCaps="false"
-            android:textColor="#FFFFFF"
+            android:textColor="#E8ECF1"
             android:textSize="12sp"
             android:textStyle="bold" />
     </LinearLayout>

@@ -1,10 +1,15 @@
 package com.rakyatid.apkcompiler;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -40,6 +45,11 @@ public class MainActivity extends Activity {
     // UI - Tabs
     private TextView tabProjects, tabBuild, tabToolchain, tabFiles;
     private View viewTabProjects, viewTabBuild, viewTabToolchain, viewTabFiles;
+    private View[] tabIndicators;
+
+    // UI - Build pipeline stepper
+    private View[] pipelineDots;
+    private TextView[] pipelineLabels;
 
     // UI - Header
     private TextView badgeToolchainHeader;
@@ -61,6 +71,8 @@ public class MainActivity extends Activity {
     private Button btnInstallApk, btnShareApk;
     private TextView tvConsoleLog;
     private ScrollView scrollConsole;
+    private String lastLogLine = null;
+    private boolean isInstallingToolchain = false;
 
     // UI - Tab 3 (Toolchain)
     private LinearLayout containerToolchainItems;
@@ -72,6 +84,52 @@ public class MainActivity extends Activity {
     private TextView tvCurrentDirPath;
     private LinearLayout containerFileList;
     private File currentExplorerDir;
+
+    // Background build updates from BuildService (also shown in the notification).
+    private final BroadcastReceiver buildReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent == null) return;
+            String status = intent.getStringExtra(BuildService.EXTRA_STATUS);
+            int pct = intent.getIntExtra(BuildService.EXTRA_PROGRESS, 0);
+            String step = intent.getStringExtra(BuildService.EXTRA_STEP);
+            if (intent.hasExtra(BuildService.EXTRA_LOG)) {
+                String line = intent.getStringExtra(BuildService.EXTRA_LOG);
+                if (line != null) logToConsole(line);
+            }
+            if (BuildService.STATUS_RUNNING.equals(status)) {
+                btnStartCompile.setEnabled(false);
+                progressBuild.setVisibility(View.VISIBLE);
+                progressBuild.setProgress(pct);
+                if (step != null) tvBuildStep.setText(step);
+                updatePipeline(pct, false, false);
+            } else if (BuildService.STATUS_SUCCESS.equals(status)) {
+                String apkPath = intent.getStringExtra(BuildService.EXTRA_APK_PATH);
+                long durationMs = intent.getLongExtra(BuildService.EXTRA_DURATION_MS, 0);
+                btnStartCompile.setEnabled(true);
+                progressBuild.setProgress(100);
+                tvBuildStep.setText("Completed in " + String.format("%.2f", durationMs / 1000.0) + "s");
+                updatePipeline(100, true, false);
+                if (apkPath != null && !apkPath.isEmpty()) {
+                    File apk = new File(apkPath);
+                    if (apk.exists()) {
+                        lastBuiltApk = apk;
+                        cardBuildOutput.setVisibility(View.VISIBLE);
+                        tvOutputSize.setText(String.format("%.2f MB", apk.length() / (1024.0 * 1024.0)));
+                        tvOutputPath.setText(apk.getAbsolutePath());
+                    }
+                }
+                Toast.makeText(MainActivity.this, "Compilation Succeeded!", Toast.LENGTH_LONG).show();
+            } else if (BuildService.STATUS_ERROR.equals(status)) {
+                String error = intent.getStringExtra(BuildService.EXTRA_ERROR);
+                btnStartCompile.setEnabled(true);
+                progressBuild.setVisibility(View.GONE);
+                tvBuildStep.setText("Failed: " + error);
+                updatePipeline(pct, false, true);
+                Toast.makeText(MainActivity.this, error, Toast.LENGTH_LONG).show();
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,7 +150,106 @@ public class MainActivity extends Activity {
         refreshToolchainUI();
         refreshProjectsList();
         updateSdkConfigSummary();
+        restoreLastBuildState();
+        requestNotificationPermission();
         checkFirstLaunchTour();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        try {
+            IntentFilter filter = new IntentFilter(BuildService.ACTION_BUILD_PROGRESS);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(buildReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                registerReceiver(buildReceiver, filter);
+            }
+        } catch (Exception ignored) {}
+        restoreLastBuildState();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            unregisterReceiver(buildReceiver);
+        } catch (Exception ignored) {}
+    }
+
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1001);
+            }
+        }
+    }
+
+    private void restoreLastBuildState() {
+        if (BuildService.isRunning) {
+            btnStartCompile.setEnabled(false);
+            progressBuild.setVisibility(View.VISIBLE);
+            progressBuild.setProgress(BuildService.progress);
+            tvBuildStep.setText(BuildService.stepText);
+            updatePipeline(BuildService.progress, false, false);
+            return;
+        }
+        SharedPreferences prefs = getSharedPreferences(BuildService.PREFS_NAME, MODE_PRIVATE);
+        String path = prefs.getString(BuildService.KEY_LAST_APK, "");
+        if (path != null && !path.isEmpty()) {
+            File apk = new File(path);
+            if (apk.exists()) {
+                lastBuiltApk = apk;
+                cardBuildOutput.setVisibility(View.VISIBLE);
+                tvOutputSize.setText(String.format("%.2f MB", apk.length() / (1024.0 * 1024.0)));
+                tvOutputPath.setText(apk.getAbsolutePath());
+                long durationMs = prefs.getLong(BuildService.KEY_LAST_DURATION_MS, 0);
+                if (durationMs > 0) {
+                    tvBuildStep.setText("Completed in " + String.format("%.2f", durationMs / 1000.0) + "s");
+                } else {
+                    tvBuildStep.setText("Build ready");
+                }
+                updatePipeline(100, true, false);
+            }
+        }
+    }
+
+    private void resetPipeline() {
+        updatePipeline(0, false, false);
+    }
+
+    private void updatePipeline(int percent, boolean done, boolean failed) {
+        if (pipelineDots == null || pipelineLabels == null) return;
+        int stage;
+        if (done) {
+            stage = pipelineDots.length;
+        } else if (percent < 20) {
+            stage = 0;
+        } else if (percent < 45) {
+            stage = 1;
+        } else if (percent < 70) {
+            stage = 2;
+        } else {
+            stage = 3;
+        }
+        for (int i = 0; i < pipelineDots.length; i++) {
+            if (done) {
+                pipelineDots[i].setBackgroundResource(R.drawable.pipeline_dot_done);
+                pipelineLabels[i].setTextColor(getColor(R.color.text_primary));
+            } else if (i < stage) {
+                pipelineDots[i].setBackgroundResource(R.drawable.pipeline_dot_done);
+                pipelineLabels[i].setTextColor(getColor(R.color.text_primary));
+            } else if (i == stage) {
+                pipelineDots[i].setBackgroundResource(failed
+                        ? R.drawable.pipeline_dot_idle : R.drawable.pipeline_dot_active);
+                pipelineLabels[i].setTextColor(failed
+                        ? getColor(R.color.accent_red) : getColor(R.color.primary_accent));
+            } else {
+                pipelineDots[i].setBackgroundResource(R.drawable.pipeline_dot_idle);
+                pipelineLabels[i].setTextColor(getColor(R.color.text_muted));
+            }
+        }
     }
 
     private void initViews() {
@@ -105,6 +262,26 @@ public class MainActivity extends Activity {
         viewTabBuild = findViewById(R.id.view_tab_build);
         viewTabToolchain = findViewById(R.id.view_tab_toolchain);
         viewTabFiles = findViewById(R.id.view_tab_files);
+
+        tabIndicators = new View[]{
+                findViewById(R.id.tab_indicator_0),
+                findViewById(R.id.tab_indicator_1),
+                findViewById(R.id.tab_indicator_2),
+                findViewById(R.id.tab_indicator_3)
+        };
+
+        pipelineDots = new View[]{
+                findViewById(R.id.pipeline_dot_1),
+                findViewById(R.id.pipeline_dot_2),
+                findViewById(R.id.pipeline_dot_3),
+                findViewById(R.id.pipeline_dot_4)
+        };
+        pipelineLabels = new TextView[]{
+                findViewById(R.id.pipeline_label_1),
+                findViewById(R.id.pipeline_label_2),
+                findViewById(R.id.pipeline_label_3),
+                findViewById(R.id.pipeline_label_4)
+        };
 
         badgeToolchainHeader = findViewById(R.id.badge_toolchain_header);
 
@@ -161,16 +338,32 @@ public class MainActivity extends Activity {
         tabToolchain.setTextColor(index == 2 ? primaryColor : secondaryColor);
         tabFiles.setTextColor(index == 3 ? primaryColor : secondaryColor);
 
-        if (index == 3 && activeProject != null) {
-            loadExplorerDirectory(activeProject.getRootDir());
+        tabProjects.setTypeface(null, index == 0 ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+        tabBuild.setTypeface(null, index == 1 ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+        tabToolchain.setTypeface(null, index == 2 ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+        tabFiles.setTypeface(null, index == 3 ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+
+        if (tabIndicators != null) {
+            for (int i = 0; i < tabIndicators.length; i++) {
+                if (tabIndicators[i] != null) {
+                    tabIndicators[i].setBackgroundColor(i == index ? primaryColor : Color.TRANSPARENT);
+                }
+            }
+        }
+
+        if (index == 3) {
+            if (activeProject != null) {
+                loadExplorerDirectory(activeProject.getRootDir());
+            } else {
+                tvCurrentDirPath.setText("-");
+            }
         }
     }
 
     private void setupActions() {
         findViewById(R.id.btn_open_clone_dialog).setOnClickListener(v -> showCloneDialog());
         findViewById(R.id.btn_open_folder_picker).setOnClickListener(v -> showFolderPicker());
-        findViewById(R.id.btn_clear_log).setOnClickListener(v -> tvConsoleLog.setText(""));
-        badgeToolchainHeader.setOnClickListener(v -> switchTab(2));
+        findViewById(R.id.btn_clear_log).setOnClickListener(v -> { tvConsoleLog.setText(""); lastLogLine = null; });        badgeToolchainHeader.setOnClickListener(v -> switchTab(2));
 
         View btnHeaderHelp = findViewById(R.id.btn_header_help);
         if (btnHeaderHelp != null) {
@@ -223,10 +416,14 @@ public class MainActivity extends Activity {
 
         if (subdirs == null || subdirs.length == 0) {
             tvEmptyProjects.setVisibility(View.VISIBLE);
+            View emptyParent = (View) tvEmptyProjects.getParent();
+            if (emptyParent != null) emptyParent.setVisibility(View.VISIBLE);
             return;
         }
 
         tvEmptyProjects.setVisibility(View.GONE);
+        View emptyParent = (View) tvEmptyProjects.getParent();
+        if (emptyParent != null) emptyParent.setVisibility(View.GONE);
         LayoutInflater inflater = LayoutInflater.from(this);
 
         for (File dir : subdirs) {
@@ -479,59 +676,41 @@ public class MainActivity extends Activity {
                 return;
             }
 
+            if (BuildService.isRunning) {
+                Toast.makeText(this, "Build already running. Check the notification for progress.", Toast.LENGTH_SHORT).show();
+                switchTab(1);
+                return;
+            }
+
             if (!toolchainManager.isAllReady()) {
                 Toast.makeText(this, "Toolchain incomplete. Opening Toolchain tab...", Toast.LENGTH_SHORT).show();
                 switchTab(2);
                 return;
             }
 
+            // Hand the build to the foreground service so it keeps running
+            // with a notification progress bar after the app is closed.
+            Intent intent = new Intent(this, BuildService.class);
+            intent.setAction(BuildService.ACTION_START_BUILD);
+            intent.putExtra(BuildService.EXTRA_PROJECT_PATH, activeProject.getRootDir().getAbsolutePath());
+            intent.putExtra(BuildService.EXTRA_MIN_SDK, activeProject.getMinSdk());
+            intent.putExtra(BuildService.EXTRA_TARGET_SDK, activeProject.getTargetSdk());
+            intent.putExtra(BuildService.EXTRA_COMPILE_SDK, activeProject.getCompileSdk());
+            intent.putExtra(BuildService.EXTRA_CUSTOM_SDK_PATH, activeProject.getCustomSdkPath());
+            intent.putExtra(BuildService.EXTRA_PLATFORM_SDK, toolchainManager.getSelectedPlatformSdk());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent);
+            } else {
+                startService(intent);
+            }
+
             btnStartCompile.setEnabled(false);
             progressBuild.setVisibility(View.VISIBLE);
             progressBuild.setProgress(0);
             cardBuildOutput.setVisibility(View.GONE);
-            tvBuildStep.setText("Compiling...");
-
-            builderEngine.buildProject(activeProject, new ApkBuilderEngine.BuildListener() {
-                @Override
-                public void onLog(String line) {
-                    mainHandler.post(() -> logToConsole(line));
-                }
-
-                @Override
-                public void onProgress(int step, int totalSteps, String message) {
-                    mainHandler.post(() -> {
-                        int pct = (step * 100) / totalSteps;
-                        progressBuild.setProgress(pct);
-                        tvBuildStep.setText(message);
-                    });
-                }
-
-                @Override
-                public void onSuccess(File finalApk, long durationMs) {
-                    mainHandler.post(() -> {
-                        lastBuiltApk = finalApk;
-                        btnStartCompile.setEnabled(true);
-                        progressBuild.setProgress(100);
-                        tvBuildStep.setText("Completed in " + String.format("%.2f", durationMs / 1000.0) + "s");
-
-                        cardBuildOutput.setVisibility(View.VISIBLE);
-                        tvOutputSize.setText(String.format("%.2f MB", finalApk.length() / (1024.0 * 1024.0)));
-                        tvOutputPath.setText(finalApk.getAbsolutePath());
-
-                        Toast.makeText(MainActivity.this, "Compilation Succeeded!", Toast.LENGTH_LONG).show();
-                    });
-                }
-
-                @Override
-                public void onError(String error) {
-                    mainHandler.post(() -> {
-                        btnStartCompile.setEnabled(true);
-                        progressBuild.setVisibility(View.GONE);
-                        tvBuildStep.setText("Failed: " + error);
-                        Toast.makeText(MainActivity.this, error, Toast.LENGTH_LONG).show();
-                    });
-                }
-            });
+            tvBuildStep.setText("Starting build...");
+            resetPipeline();
+            logToConsole("[BUILD] Started in background. Closing the app will not stop it.");
         } catch (Throwable t) {
             showCrashDialog("Error Starting Compilation", t);
         }
@@ -581,7 +760,7 @@ public class MainActivity extends Activity {
 
             tvName.setText(item.getName());
             tvDesc.setText(item.getDescription());
-            tvSize.setText("Size: " + item.getFormattedSize());
+            tvSize.setText(item.getFormattedSize());
             tvPath.setText(item.getTargetFile().getName());
 
             if (item.isInstalled()) {
@@ -589,7 +768,7 @@ public class MainActivity extends Activity {
                 tvBadge.setBackgroundResource(R.drawable.badge_ready);
                 tvBadge.setTextColor(getColor(R.color.accent_green));
             } else {
-                tvBadge.setText("Not Installed");
+                tvBadge.setText("Missing");
                 tvBadge.setBackgroundResource(R.drawable.badge_missing);
                 tvBadge.setTextColor(getColor(R.color.accent_red));
             }
@@ -598,17 +777,19 @@ public class MainActivity extends Activity {
         }
 
         if (allReady) {
-            badgeToolchainHeader.setText("Toolchain Ready");
+            badgeToolchainHeader.setText("Ready");
             badgeToolchainHeader.setBackgroundResource(R.drawable.badge_ready);
             badgeToolchainHeader.setTextColor(getColor(R.color.accent_green));
         } else {
-            badgeToolchainHeader.setText("Toolchain Incomplete");
+            badgeToolchainHeader.setText("Not ready");
             badgeToolchainHeader.setBackgroundResource(R.drawable.badge_missing);
             badgeToolchainHeader.setTextColor(getColor(R.color.accent_red));
         }
     }
 
     private void installToolchainDependencies() {
+        if (isInstallingToolchain) return;
+        isInstallingToolchain = true;
         btnInstallToolchain.setEnabled(false);
         progressToolchain.setVisibility(View.VISIBLE);
         progressToolchain.setProgress(0);
@@ -635,6 +816,7 @@ public class MainActivity extends Activity {
             @Override
             public void onComplete(boolean allSuccess) {
                 mainHandler.post(() -> {
+                    isInstallingToolchain = false;
                     btnInstallToolchain.setEnabled(true);
                     progressToolchain.setVisibility(View.GONE);
                     tvToolchainStatus.setText(allSuccess ? "All toolchain dependencies are ready!" : "Some components failed to install");
@@ -673,17 +855,25 @@ public class MainActivity extends Activity {
         for (File f : files) {
             View row = inflater.inflate(R.layout.item_file, containerFileList, false);
             TextView tvType = row.findViewById(R.id.tv_file_type);
+            if (tvType != null) tvType.setVisibility(View.GONE);
+            ImageView ivFileIcon = row.findViewById(R.id.iv_file_icon);
             TextView tvName = row.findViewById(R.id.tv_file_name);
             TextView tvSize = row.findViewById(R.id.tv_file_size);
 
             if (f.isDirectory()) {
-                tvType.setText("[DIR]");
-                tvType.setTextColor(getColor(R.color.primary_accent));
+                if (ivFileIcon != null) ivFileIcon.setImageResource(R.drawable.ic_nav_folder);
                 tvSize.setText((f.listFiles() != null ? f.listFiles().length : 0) + " items");
                 row.setOnClickListener(v -> loadExplorerDirectory(f));
             } else {
-                tvType.setText("[FILE]");
-                tvType.setTextColor(getColor(R.color.text_muted));
+                if (ivFileIcon != null) {
+                    String lower = f.getName().toLowerCase();
+                    if (lower.endsWith(".java") || lower.endsWith(".xml")
+                            || lower.endsWith(".gradle") || lower.endsWith(".kt")) {
+                        ivFileIcon.setImageResource(R.drawable.ic_file_code);
+                    } else {
+                        ivFileIcon.setImageResource(R.drawable.ic_nav_file);
+                    }
+                }
                 tvSize.setText((f.length() / 1024) + " KB");
                 row.setOnClickListener(v -> openCodeEditorDialog(f));
             }
@@ -776,13 +966,13 @@ public class MainActivity extends Activity {
     private void updateSdkConfigSummary() {
         if (tvSdkConfigSummary == null) return;
         if (activeProject != null) {
-            String platform = "Android " + activeProject.getCompileSdk();
+            String platform = toolchainManager.getSelectedPlatformSdk();
             if (activeProject.getCustomSdkPath() != null && !activeProject.getCustomSdkPath().isEmpty()) {
-                platform = "Custom: " + new File(activeProject.getCustomSdkPath()).getName();
+                platform = new File(activeProject.getCustomSdkPath()).getName();
             }
-            tvSdkConfigSummary.setText("Min: " + activeProject.getMinSdk() + " • Target: " + activeProject.getTargetSdk() + " • Platform: " + platform);
+            tvSdkConfigSummary.setText("Min: " + activeProject.getMinSdk() + " • Target: " + activeProject.getTargetSdk() + " • " + platform);
         } else {
-            tvSdkConfigSummary.setText("Min: 21 • Target: 34 • Platform: " + toolchainManager.getSelectedPlatformSdk());
+            tvSdkConfigSummary.setText("Min: 21 • Target: 34 • " + toolchainManager.getSelectedPlatformSdk());
         }
     }
 
@@ -929,6 +1119,10 @@ public class MainActivity extends Activity {
     }
 
     private void logToConsole(String line) {
+        // Skip an exact repeat of the previous line: a double-tapped install
+        // must not print the same toolchain result twice.
+        if (line != null && line.equals(lastLogLine)) return;
+        lastLogLine = line;
         tvConsoleLog.append(line + "\n");
         scrollConsole.post(() -> scrollConsole.fullScroll(View.FOCUS_DOWN));
     }
@@ -944,10 +1138,10 @@ public class MainActivity extends Activity {
         builder.setTitle("APK Compiler");
         builder.setIcon(R.drawable.ic_app_logo);
         builder.setMessage("On-Device APK Compiler & Git Cloner\n\n"
-                + "Version: 1.2.1\n"
+                + "Version: 1.3.1\n"
                 + "Target SDK: 34 (Android 14)\n"
                 + "Engine: AAPT2 + ECJ + D8 + apksig\n\n"
-                + "Professional native on-device Android compilation without Gradle or PC.");
+                + "Builds keep running in the background with a notification progress bar, even after the app is closed.");
         builder.setPositiveButton("Close", (d, w) -> d.dismiss());
         builder.setNeutralButton("Tour Guide", (d, w) -> {
             d.dismiss();
@@ -996,42 +1190,42 @@ public class MainActivity extends Activity {
         new TourStep(
             "STEP 1 OF 4",
             R.drawable.ic_tour_welcome,
-            "Welcome to APK Compiler",
-            "On-Device Compiler & Git Cloner",
-            "Powerful on-device Git cloner & Android compiler without PC or Termux. Build standalone APKs directly on your smartphone.",
-            "Compile standalone APKs directly on your device",
-            "Zero external dependencies - No Termux or PC needed",
-            "Complete offline pipeline: AAPT2, ECJ, D8 & apksig"
+            "Welcome",
+            "Build APKs on your phone",
+            "Clone a repo and build it into an APK, right on this device. No PC needed.",
+            "Build APKs on-device",
+            "No PC or Termux needed",
+            "AAPT2, ECJ, D8 and signing built in"
         ),
         new TourStep(
             "STEP 2 OF 4",
             R.drawable.ic_tour_projects,
-            "Projects Tab",
-            "Git Clone & Local Projects",
-            "Clone any public GitHub repository or pick any local project folder.",
-            "1-Click GitHub repository cloner with custom branch",
-            "Built-in offline sample project & quick repo presets",
-            "Folder picker for existing Android projects in storage"
+            "Projects",
+            "Clone or open a project",
+            "Clone a public GitHub repo, or pick a folder already on your phone.",
+            "Clone with a custom branch",
+            "Quick samples: Flashlight and Compass",
+            "Open a local project folder"
         ),
         new TourStep(
             "STEP 3 OF 4",
             R.drawable.ic_tour_compiler,
-            "Compiler & SDK Tuning",
-            "Native 4-Stage Build Pipeline",
-            "1-click build pipeline (AAPT2 -> ECJ -> D8 -> apksig). Configure custom Min/Target SDKs.",
-            "Automated 4-stage build pipeline: AAPT2 -> ECJ -> D8 -> apksig",
-            "Configurable Min & Target SDK versions (Android 7 to 14)",
-            "Built-in APK signing (v1/v2) and security risk auditor"
+            "Build",
+            "One tap, four stages",
+            "Resources, Java, Dex, then signing. You can close the app: the build keeps running and shows its progress in a notification.",
+            "Four stages: AAPT2, ECJ, D8, signing",
+            "Min and target SDK can be changed",
+            "APK signing and security check built in"
         ),
         new TourStep(
             "STEP 4 OF 4",
             R.drawable.ic_tour_tools,
-            "Toolchain & Live Editor",
-            "Built-in AndroidX & Live Editor",
-            "Built-in AndroidX support, multi-SDK management, and in-app code editor.",
-            "Built-in AndroidX essentials & Maven dependency resolver",
-            "In-app code editor with syntax highlighting for Java & XML",
-            "Real-time compiler console with instant install & share"
+            "Tools & Editor",
+            "Everything is already inside",
+            "Toolchain, AndroidX support and a code editor, all in the app.",
+            "AndroidX and Maven dependencies",
+            "Edit Java and XML files in the app",
+            "Logs, install and share after a build"
         )
     };
 

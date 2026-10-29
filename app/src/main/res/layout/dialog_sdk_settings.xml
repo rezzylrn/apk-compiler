@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SDK Version Settings"
+        android:text="SDK settings"
         android:textColor="@color/text_primary"
         android:textSize="16sp"
         android:textStyle="bold" />
@@ -27,7 +27,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="14dp"
-        android:text="Min SDK (Minimum Android Version)"
+        android:text="Min SDK"
         android:textColor="@color/text_muted"
         android:textSize="11sp" />
 
@@ -44,7 +44,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:text="Target SDK (Target Android Version)"
+        android:text="Target SDK"
         android:textColor="@color/text_muted"
         android:textSize="11sp" />
 
@@ -60,8 +60,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:text="*Target SDK &lt; 23 will be automatically adjusted to 24 for Android 14+ compatibility."
-        android:textColor="@color/accent_cyan"
+        android:text="Target SDK below 23 is raised to 24 automatically."
+        android:textColor="@color/text_muted"
         android:textSize="10sp" />
 
     <!-- Platform SDK -->
@@ -69,7 +69,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:text="Platform SDK / Compile SDK (android.jar)"
+        android:text="Platform SDK"
         android:textColor="@color/text_muted"
         android:textSize="11sp" />
 
@@ -161,7 +161,7 @@
             android:background="@drawable/btn_primary"
             android:text="Apply"
             android:textAllCaps="false"
-            android:textColor="#FFFFFF"
+            android:textColor="#E8ECF1"
             android:textSize="13sp"
             android:textStyle="bold" />
     </LinearLayout>
